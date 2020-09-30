@@ -8,8 +8,8 @@
     <b><a href="https://traintool.jrieke.com/">Documentation</a> • <a href="https://github.com/jrieke/traintool">Github</a> • <a href="mailto:johannes.rieke@gmail.com">Contact</a></b>
 </p>
 <p align="center">
-    <a href="https://github.com/jrieke/traintool/actions"><img src=https://github.com/jrieke/traintool/workflows/build/badge.svg alt="build"></a>
-    <a href="https://traintool.jrieke.com"><img src=https://github.com/jrieke/traintool/workflows/docs/badge.svg alt="docs"></a>
+    <a href="https://github.com/jrieke/traintool/actions"><img src="https://github.com/jrieke/traintool/workflows/build/badge.svg" alt="build"></a>
+    <a href="https://traintool.jrieke.com"><img src="https://github.com/jrieke/traintool/workflows/docs/badge.svg" alt="docs"></a>
     <a href="https://codecov.io/gh/jrieke/traintool"><img src="https://codecov.io/gh/jrieke/traintool/branch/master/graph/badge.svg?token=NVH72ZXX8Z" alt="codecov"/></a>
 </p>
 

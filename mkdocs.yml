@@ -2,7 +2,7 @@
 site_name: traintool
 site_author: Johannes Rieke
 site_description: Python library for off-the-shelf machine learning models
-site_url: https://docs.traintool.xyz/
+site_url: https://traintool.jrieke.com/
 
 ## Repository
 #repo_name: traintool
