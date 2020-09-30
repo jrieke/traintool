@@ -1,0 +1,130 @@
+## Project information
+site_name: traintool
+site_author: Johannes Rieke
+site_description: Python library for off-the-shelf machine learning models
+site_url: https://docs.traintool.xyz/
+
+## Repository
+#repo_name: traintool
+repo_url: https://github.com/jrieke/traintool
+#edit_uri: ''  #disables edit button
+
+## Social Media
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/jrieke
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/jrieke
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/johannesrieke/
+    - icon: fontawesome/solid/envelope
+      link: mailto:johannes.rieke@gmail.com
+
+## Page tree
+nav:
+  - About: index.md
+  - Tutorial: 
+    - tutorial/intro.md
+    - tutorial/training.md
+    - tutorial/experiment-tracking.md
+    - tutorial/deployment.md
+    - tutorial/raw-models.md
+  - Tasks and Models:
+    - models/image-classification.md
+    - models/object-detection.md
+    - models/text-classification.md
+
+
+## Configuration
+theme:
+  name: material
+  logo: assets/logo-white.png
+  favicon: assets/favicon.ico
+  palette:
+    primary: blue
+    accent: deep purple
+#   custom_dir: docs/theme_override_home/
+#   # 404 page
+#   static_templates:
+#     - 404.html
+#   # Don't include MkDocs' JavaScript
+#   include_search_page: false
+#   search_index_only: true
+#   # Default values, taken from mkdocs_theme.yml
+#   language: en
+  features:
+    - tabs
+    - instant
+
+# ## Plugins
+plugins:
+  - search
+  - autolinks
+#   #- table-reader
+#   #- mkdocs-jupyter
+#   # - exclude:
+#   #     glob:
+#   #       - "*config*.json"
+#   #       - "*cfg*.json"
+#   #       - ".ipynb_checkpoints"
+#   #       - "*examples/project*"
+#   #       - "*examples/guides/*"
+#   #- minify:
+#   #    minify_html: false
+#   - mkdocstrings:
+#       default_handler: python
+#       handlers:
+#         python:
+#           rendering:
+#             show_root_heading: false
+#             show_source: true
+#           selection:
+#             filters:
+#               - "!^_"  # exlude all members starting with _
+#       watch:
+#         - src/my_library
+#   #- pdf-export
+
+# ## Custom theme additions
+# extra_javascript:
+#         - 'stylesheets/extra.js'
+# extra_css:
+#         - stylesheets/extra.css
+
+## Extensions
+markdown_extensions:
+  - markdown.extensions.admonition
+  - markdown.extensions.attr_list
+  - markdown.extensions.codehilite:
+      guess_lang: false
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji
+  - pymdownx.highlight:
+      linenums_style: pymdownx-inline
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.tabbed
+  # - mkdocs-click
+
+# #google_analytics:

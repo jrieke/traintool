@@ -1,0 +1,2 @@
+from .sklearn_models import SklearnImageClassificationWrapper
+from .torch_models import TorchImageClassificationWrapper

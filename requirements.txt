@@ -1,0 +1,11 @@
+torch
+numpy
+comet_ml
+torchvision
+pyyaml
+scikit-learn
+fastapi
+uvicorn
+joblib
+tensorboardX
+tensorboard
