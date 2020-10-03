@@ -8,6 +8,8 @@ from pathlib import Path
 import torchvision
 from torch.optim.lr_scheduler import StepLR
 from typing import Union
+from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
+from ignite.metrics import Accuracy, Loss
 
 # from loguru import logger
 
@@ -178,10 +180,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
         experiment,
         dry_run: bool = False,
     ) -> None:
-        """Trains the model, evaluates it on val/test data and saves it to file."""
 
         self.out_dir = out_dir
-
         use_cuda = torch.cuda.is_available()
 
         # Preprocess all datasets.
@@ -191,146 +191,237 @@ class TorchImageClassificationWrapper(ModelWrapper):
         val_loader = self._preprocess(val_data, config, use_cuda=use_cuda)
         test_loader = self._preprocess(test_data, config, use_cuda=use_cuda)
 
-        # # Convert data to torch dataset.
-        # train_data, test_data = data_utils.to_torch(train_data, test_data)
-
-        # # TODO: Change kwargs if running on GPU.
-        # # Create data loaders.
-        # kwargs = {"batch_size": config["batch_size"]}
-        # train_loader = torch.utils.data.DataLoader(train_data, **kwargs)
-        # test_loader = torch.utils.data.DataLoader(test_data, **kwargs)
-
-        # Set up everything for training and iterate through epochs.
+        # Set up model, optimizer, loss.
         device = torch.device("cuda" if use_cuda else "cpu")
         self._create_model(config)
         optimizer = self._create_optimizer(config, self.model.parameters())
         loss_func = nn.CrossEntropyLoss()
 
-        # TODO: Re-enable scheduler.
-        # scheduler = StepLR(optimizer, step_size=1, gamma=config.get("gamma", 0.7))
-        for epoch in range(1, config.get("epochs", 5) + 1):
-            self._train_epoch(
-                config=config,
-                device=device,
-                train_loader=train_loader,
-                optimizer=optimizer,
-                loss_func=loss_func,
-                epoch=epoch,
-                experiment=experiment,
-                dry_run=dry_run,
-            )
-            if val_data is not None:
-                self._evaluate(
-                    device=device,
-                    loader=val_loader,
-                    loss_func=loss_func,
-                    experiment=experiment,
-                    is_val=True,
-                )
-            if test_data is not None:
-                self._evaluate(
-                    device=device,
-                    loader=test_loader,
-                    loss_func=loss_func,
-                    experiment=experiment,
-                )
-            
-            # scheduler.step()
+        # Configure trainer and metrics.
+        trainer = create_supervised_trainer(
+            self.model, optimizer, loss_func, device=device
+        )
+        val_metrics = {"accuracy": Accuracy(), "loss": Loss(loss_func)}
+        evaluator = create_supervised_evaluator(self.model, metrics=val_metrics, device=device)
 
-            # TODO: Checkpoint model.
-            torch.save(self.model, out_dir / "model.pt")
+        @trainer.on(Events.ITERATION_COMPLETED(every=1))
+        def log_training_loss(trainer):
+            batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
+            print(f"Epoch {trainer.state.epoch}, batch {batch} / {trainer.state.epoch_length}: Loss: {trainer.state.output:.3f}")
 
-            if dry_run:
-                break
-
-    def _train_epoch(
-        self,
-        config: dict,
-        device: torch.device,
-        train_loader: DataLoader,
-        optimizer: optim.Optimizer,
-        loss_func,
-        epoch: int,
-        experiment,
-        dry_run: bool,
-    ) -> None:
-        with experiment.train():
-            self.model.train()
-            for batch, (inputs, labels) in enumerate(train_loader):
-
-                # Move data to cpu or gpu.
-                inputs, labels = inputs.to(device), labels.to(device)
-
-                # Reset optimizer.
-                optimizer.zero_grad()
-
-                # Run inputs through network.
-                output = self.model(inputs)
-                loss = loss_func(output, labels)
-                pred_labels = output.argmax(dim=1, keepdim=True)
-                correct = pred_labels.eq(labels.view_as(pred_labels)).sum().item()
-                acc = 100 * correct / len(inputs)
-
-                # Backprop and optimize.
-                loss.backward()
-                optimizer.step()  # this somehow tracks the loss already
-
-                if batch % 10 == 0:
-                    # Track metrics to comet.ml
-                    # Loss is already tracked through optimizer.step above even though I don't
-                    # really get how.
-                    # experiment.log_metric("loss", loss.item(), step=batch)
-                    experiment.log_metric("accuracy", acc, step=batch)
-
-                    # Print metrics.
-                    # TODO: This currently tracks the metrics only for the current batch.
-                    #   Use running metrics instead, maybe using pytorch lightning or Ignite or fast.ai.
-                    print(
-                        f"Train epoch {epoch}, batch {batch}/{len(train_loader.dataset)}:\tLoss: {loss.item():.3f}\tAccuracy: {acc:.3f}"
-                    )
-
-                if dry_run:
-                    break
-
-    def _evaluate(
-        self,
-        device: torch.device,
-        loader: DataLoader,
-        loss_func,
-        experiment,
-        is_val: bool = False,
-    ) -> None:
-        cm = experiment.validate() if is_val else experiment.train()
-        with cm:
-            self.model.eval()
-            running_loss = 0
-            correct = 0
-            with torch.no_grad():
-                for inputs, labels in loader:
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    output = self.model(inputs)
-                    running_loss += (
-                        loss_func(output, labels).mean().item()
-                    )  # sum up batch loss
-                    pred_labels = output.argmax(dim=1, keepdim=True)
-                    correct += pred_labels.eq(labels.view_as(pred_labels)).sum().item()
-
-            running_loss /= len(loader.dataset)
-            acc = 100 * correct / len(loader.dataset)
-
-            # Track metrics to comet.ml
-            experiment.log_metric("loss", running_loss)
-            experiment.log_metric("accuracy", correct / len(loader.dataset))
-
+        # TODO: This iterates over complete train set again, maybe accumulate as in the 
+        #   example in the footnote here: https://pytorch.org/ignite/quickstart.html#
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def log_training_results(trainer):
+            evaluator.run(train_loader)
+            metrics = evaluator.state.metrics
             print(
-                "Val:" if is_val else "Val:",
-                f"Loss: {running_loss:.3f}, Accuracy: {acc:.3f}",
+                f"Training results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
             )
+            experiment.log_metric("train_loss", metrics['loss'])
+            experiment.log_metric("train_accuracy", metrics['accuracy'])
+            writer.add_scalar("train_loss", metrics['loss'])
+            writer.add_scalar("train_accuracy", metrics['accuracy'])
 
-    # def save(self, out_dir: Union[Path, str]):
-    #     """Saves the model to file."""
-    #     out_dir = Path(out_dir)
-    #     torch.save(self.model, out_dir / "model.pt")
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def log_validation_results(trainer):
+            evaluator.run(val_loader)
+            metrics = evaluator.state.metrics
+            print(
+                f"Validation results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+            )
+            experiment.log_metric("val_loss", metrics['loss'])
+            experiment.log_metric("val_accuracy", metrics['accuracy'])
+            writer.add_scalar("val_loss", metrics['loss'])
+            writer.add_scalar("val_accuracy", metrics['accuracy'])
+            
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def log_test_results(trainer):
+            evaluator.run(test_loader)
+            metrics = evaluator.state.metrics
+            print(
+                f"Test results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+            )
+            experiment.log_metric("test_loss", metrics['loss'])
+            experiment.log_metric("test_accuracy", metrics['accuracy'])
+            writer.add_scalar("test_loss", metrics['loss'])
+            writer.add_scalar("test_accuracy", metrics['accuracy'])
+
+        # Start training.
+        max_epochs = 1 if dry_run else config.get("epochs", 5)
+        epoch_length = 1 if dry_run else None
+        trainer.run(
+            train_loader, max_epochs=max_epochs, epoch_length=epoch_length
+        )
+
+        # Save the trained model.
+        # TODO: Create checkpoints during training.
+        torch.save(self.model, out_dir / "model.pt")
+
+    # def old_train(
+    #     self,
+    #     train_data,
+    #     val_data,
+    #     test_data,
+    #     config: dict,
+    #     out_dir: Path,
+    #     writer,
+    #     experiment,
+    #     dry_run: bool = False,
+    # ) -> None:
+    #     """Trains the model, evaluates it on val/test data and saves it to file."""
+
+    #     self.out_dir = out_dir
+
+    #     use_cuda = torch.cuda.is_available()
+
+    #     # Preprocess all datasets.
+    #     train_loader = self._preprocess(
+    #         train_data, config, train=True, use_cuda=use_cuda
+    #     )
+    #     val_loader = self._preprocess(val_data, config, use_cuda=use_cuda)
+    #     test_loader = self._preprocess(test_data, config, use_cuda=use_cuda)
+
+    #     # # Convert data to torch dataset.
+    #     # train_data, test_data = data_utils.to_torch(train_data, test_data)
+
+    #     # # TODO: Change kwargs if running on GPU.
+    #     # # Create data loaders.
+    #     # kwargs = {"batch_size": config["batch_size"]}
+    #     # train_loader = torch.utils.data.DataLoader(train_data, **kwargs)
+    #     # test_loader = torch.utils.data.DataLoader(test_data, **kwargs)
+
+    #     # Set up everything for training and iterate through epochs.
+    #     device = torch.device("cuda" if use_cuda else "cpu")
+    #     self._create_model(config)
+    #     optimizer = self._create_optimizer(config, self.model.parameters())
+    #     loss_func = nn.CrossEntropyLoss()
+
+    #     # TODO: Re-enable scheduler.
+    #     # scheduler = StepLR(optimizer, step_size=1, gamma=config.get("gamma", 0.7))
+    #     for epoch in range(1, config.get("epochs", 5) + 1):
+    #         self._train_epoch(
+    #             config=config,
+    #             device=device,
+    #             train_loader=train_loader,
+    #             optimizer=optimizer,
+    #             loss_func=loss_func,
+    #             epoch=epoch,
+    #             experiment=experiment,
+    #             dry_run=dry_run,
+    #         )
+    #         if val_data is not None:
+    #             self._evaluate(
+    #                 device=device,
+    #                 loader=val_loader,
+    #                 loss_func=loss_func,
+    #                 experiment=experiment,
+    #                 is_val=True,
+    #             )
+    #         if test_data is not None:
+    #             self._evaluate(
+    #                 device=device,
+    #                 loader=test_loader,
+    #                 loss_func=loss_func,
+    #                 experiment=experiment,
+    #             )
+
+    #         # scheduler.step()
+
+    #         # TODO: Checkpoint model.
+    #         torch.save(self.model, out_dir / "model.pt")
+
+    #         if dry_run:
+    #             break
+
+    # def _train_epoch(
+    #     self,
+    #     config: dict,
+    #     device: torch.device,
+    #     train_loader: DataLoader,
+    #     optimizer: optim.Optimizer,
+    #     loss_func,
+    #     epoch: int,
+    #     experiment,
+    #     dry_run: bool,
+    # ) -> None:
+    #     with experiment.train():
+    #         self.model.train()
+    #         for batch, (inputs, labels) in enumerate(train_loader):
+
+    #             # Move data to cpu or gpu.
+    #             inputs, labels = inputs.to(device), labels.to(device)
+
+    #             # Reset optimizer.
+    #             optimizer.zero_grad()
+
+    #             # Run inputs through network.
+    #             output = self.model(inputs)
+    #             loss = loss_func(output, labels)
+    #             pred_labels = output.argmax(dim=1, keepdim=True)
+    #             correct = pred_labels.eq(labels.view_as(pred_labels)).sum().item()
+    #             acc = 100 * correct / len(inputs)
+
+    #             # Backprop and optimize.
+    #             loss.backward()
+    #             optimizer.step()  # this somehow tracks the loss already
+
+    #             if batch % 10 == 0:
+    #                 # Track metrics to comet.ml
+    #                 # Loss is already tracked through optimizer.step above even though I don't
+    #                 # really get how.
+    #                 # experiment.log_metric("loss", loss.item(), step=batch)
+    #                 experiment.log_metric("accuracy", acc, step=batch)
+
+    #                 # Print metrics.
+    #                 # TODO: This currently tracks the metrics only for the current batch.
+    #                 #   Use running metrics instead, maybe using pytorch lightning or Ignite or fast.ai.
+    #                 print(
+    #                     f"Train epoch {epoch}, batch {batch}/{len(train_loader.dataset)}:\tLoss: {loss.item():.3f}\tAccuracy: {acc:.3f}"
+    #                 )
+
+    #             if dry_run:
+    #                 break
+
+    # def _evaluate(
+    #     self,
+    #     device: torch.device,
+    #     loader: DataLoader,
+    #     loss_func,
+    #     experiment,
+    #     is_val: bool = False,
+    # ) -> None:
+    #     cm = experiment.validate() if is_val else experiment.train()
+    #     with cm:
+    #         self.model.eval()
+    #         running_loss = 0
+    #         correct = 0
+    #         with torch.no_grad():
+    #             for inputs, labels in loader:
+    #                 inputs, labels = inputs.to(device), labels.to(device)
+    #                 output = self.model(inputs)
+    #                 running_loss += (
+    #                     loss_func(output, labels).mean().item()
+    #                 )  # sum up batch loss
+    #                 pred_labels = output.argmax(dim=1, keepdim=True)
+    #                 correct += pred_labels.eq(labels.view_as(pred_labels)).sum().item()
+
+    #         running_loss /= len(loader.dataset)
+    #         acc = 100 * correct / len(loader.dataset)
+
+    #         # Track metrics to comet.ml
+    #         experiment.log_metric("loss", running_loss)
+    #         experiment.log_metric("accuracy", correct / len(loader.dataset))
+
+    #         print(
+    #             "Val:" if is_val else "Val:",
+    #             f"Loss: {running_loss:.3f}, Accuracy: {acc:.3f}",
+    #         )
+
+    # # def save(self, out_dir: Union[Path, str]):
+    # #     """Saves the model to file."""
+    # #     out_dir = Path(out_dir)
+    # #     torch.save(self.model, out_dir / "model.pt")
 
     @classmethod
     def load(cls, out_dir: Path, model_name: str):

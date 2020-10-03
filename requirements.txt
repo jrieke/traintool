@@ -1,7 +1,8 @@
 torch
+torchvision
+pytorch-ignite
 numpy
 comet_ml
-torchvision
 pyyaml
 scikit-learn
 fastapi

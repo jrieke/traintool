@@ -39,7 +39,6 @@ def wrapper(tmp_path):
     return wrapper
 
 
-
 def test_create_model():
     wrapper = TorchImageClassificationWrapper("resnet18")
     wrapper._create_model({})
@@ -96,9 +95,9 @@ def test_train(data_format, tmp_path):
     # )
     # wrapper = TorchImageClassificationWrapper("simple-cnn")
     data = create_image_classification_data(
-        output_format=data_format, size=224, grayscale=False
+        output_format=data_format, size=28, grayscale=True
     )
-    wrapper = TorchImageClassificationWrapper("resnet18")
+    wrapper = TorchImageClassificationWrapper("simple-cnn")
 
     # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
 
@@ -110,7 +109,7 @@ def test_train(data_format, tmp_path):
         writer=SummaryWriter(write_to_disk=False),
         experiment=DummyExperiment(),
         out_dir=tmp_path,
-        dry_run=True,
+        dry_run=True,  # True,
     )
 
     assert isinstance(wrapper.model, nn.Module)
