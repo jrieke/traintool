@@ -20,7 +20,7 @@ sample = (test_data[0][0], test_data[1][0])
 # sample = test_data[0]
 
 # Set hyperparameters.
-config = {"epochs": 1, "lr": 0.1, "batch_size": 64}  # epochs: 14
+config = {"epochs": 3, "lr": 0.1, "batch_size": 128}  # epochs: 14
 # config = {"n_estimators": 10}
 
 # Start training a simple CNN

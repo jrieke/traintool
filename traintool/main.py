@@ -180,11 +180,12 @@ def train(
     _write_info_file(out_dir, model_name=model_name, config=config)
 
     # Print some info
-    print("=" * 29, "traintool experiment", "=" * 29)
-    print("Name:\t", experiment_name)
-    print("Model name:\t", model_name)
-    print("Configuration:\t", config)
-    print("Output dir:\t", out_dir)
+    # print("=" * 29, "traintool experiment", "=" * 29)
+    print("  traintool experiment  ".center(80, "="))
+    print("Name:".ljust(15), experiment_name)
+    print("Model name:".ljust(15), model_name)
+    print("Configuration:".ljust(15), config)
+    print("Output dir:".ljust(15), out_dir)
     if "api_key" in comet_config:
         print(
             "Logging to comet.ml",
@@ -192,9 +193,7 @@ def train(
             if comet_config["project_name"] is not None
             else "",
         )
-    print()
     print("=" * 80)
-    print()
     if dry_run:
         print(">>> THIS IS JUST A DRY RUN <<<")
         print()
