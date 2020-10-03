@@ -202,14 +202,18 @@ class TorchImageClassificationWrapper(ModelWrapper):
             self.model, optimizer, loss_func, device=device
         )
         val_metrics = {"accuracy": Accuracy(), "loss": Loss(loss_func)}
-        evaluator = create_supervised_evaluator(self.model, metrics=val_metrics, device=device)
+        evaluator = create_supervised_evaluator(
+            self.model, metrics=val_metrics, device=device
+        )
 
-        @trainer.on(Events.ITERATION_COMPLETED(every=1))
+        @trainer.on(Events.ITERATION_COMPLETED(every=config.get("print_every", 100)))
         def log_training_loss(trainer):
             batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
-            print(f"Epoch {trainer.state.epoch}, batch {batch} / {trainer.state.epoch_length}: Loss: {trainer.state.output:.3f}")
+            print(
+                f"Epoch {trainer.state.epoch}, batch {batch} / {trainer.state.epoch_length}: Loss: {trainer.state.output:.3f}"
+            )
 
-        # TODO: This iterates over complete train set again, maybe accumulate as in the 
+        # TODO: This iterates over complete train set again, maybe accumulate as in the
         #   example in the footnote here: https://pytorch.org/ignite/quickstart.html#
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_training_results(trainer):
@@ -218,41 +222,41 @@ class TorchImageClassificationWrapper(ModelWrapper):
             print(
                 f"Training results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
             )
-            experiment.log_metric("train_loss", metrics['loss'])
-            experiment.log_metric("train_accuracy", metrics['accuracy'])
-            writer.add_scalar("train_loss", metrics['loss'])
-            writer.add_scalar("train_accuracy", metrics['accuracy'])
+            experiment.log_metric("train_loss", metrics["loss"])
+            experiment.log_metric("train_accuracy", metrics["accuracy"])
+            writer.add_scalar("train_loss", metrics["loss"])
+            writer.add_scalar("train_accuracy", metrics["accuracy"])
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_validation_results(trainer):
-            evaluator.run(val_loader)
-            metrics = evaluator.state.metrics
-            print(
-                f"Validation results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
-            )
-            experiment.log_metric("val_loss", metrics['loss'])
-            experiment.log_metric("val_accuracy", metrics['accuracy'])
-            writer.add_scalar("val_loss", metrics['loss'])
-            writer.add_scalar("val_accuracy", metrics['accuracy'])
-            
+            if val_loader:
+                evaluator.run(val_loader)
+                metrics = evaluator.state.metrics
+                print(
+                    f"Validation results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+                )
+                experiment.log_metric("val_loss", metrics["loss"])
+                experiment.log_metric("val_accuracy", metrics["accuracy"])
+                writer.add_scalar("val_loss", metrics["loss"])
+                writer.add_scalar("val_accuracy", metrics["accuracy"])
+
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_test_results(trainer):
-            evaluator.run(test_loader)
-            metrics = evaluator.state.metrics
-            print(
-                f"Test results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
-            )
-            experiment.log_metric("test_loss", metrics['loss'])
-            experiment.log_metric("test_accuracy", metrics['accuracy'])
-            writer.add_scalar("test_loss", metrics['loss'])
-            writer.add_scalar("test_accuracy", metrics['accuracy'])
+            if test_loader:
+                evaluator.run(test_loader)
+                metrics = evaluator.state.metrics
+                print(
+                    f"Test results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+                )
+                experiment.log_metric("test_loss", metrics["loss"])
+                experiment.log_metric("test_accuracy", metrics["accuracy"])
+                writer.add_scalar("test_loss", metrics["loss"])
+                writer.add_scalar("test_accuracy", metrics["accuracy"])
 
         # Start training.
         max_epochs = 1 if dry_run else config.get("epochs", 5)
         epoch_length = 1 if dry_run else None
-        trainer.run(
-            train_loader, max_epochs=max_epochs, epoch_length=epoch_length
-        )
+        trainer.run(train_loader, max_epochs=max_epochs, epoch_length=epoch_length)
 
         # Save the trained model.
         # TODO: Create checkpoints during training.

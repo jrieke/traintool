@@ -100,7 +100,8 @@ def test_train(data_format, tmp_path):
     wrapper = TorchImageClassificationWrapper("simple-cnn")
 
     # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
-
+    # TODO: Test with and without val/test data.
+    # TODO: Check that something was written to writer and experiment.
     wrapper.train(
         train_data=data,
         val_data=data,
