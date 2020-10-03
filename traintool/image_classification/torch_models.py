@@ -224,8 +224,10 @@ class TorchImageClassificationWrapper(ModelWrapper):
             )
             experiment.log_metric("train_loss", metrics["loss"])
             experiment.log_metric("train_accuracy", metrics["accuracy"])
-            writer.add_scalar("train_loss", metrics["loss"])
-            writer.add_scalar("train_accuracy", metrics["accuracy"])
+            writer.add_scalar("train_loss", metrics["loss"], trainer.state.epoch)
+            writer.add_scalar(
+                "train_accuracy", metrics["accuracy"], trainer.state.epoch
+            )
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_validation_results(trainer):
@@ -237,8 +239,10 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 )
                 experiment.log_metric("val_loss", metrics["loss"])
                 experiment.log_metric("val_accuracy", metrics["accuracy"])
-                writer.add_scalar("val_loss", metrics["loss"])
-                writer.add_scalar("val_accuracy", metrics["accuracy"])
+                writer.add_scalar("val_loss", metrics["loss"], trainer.state.epoch)
+                writer.add_scalar(
+                    "val_accuracy", metrics["accuracy"], trainer.state.epoch
+                )
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_test_results(trainer):
@@ -250,8 +254,16 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 )
                 experiment.log_metric("test_loss", metrics["loss"])
                 experiment.log_metric("test_accuracy", metrics["accuracy"])
-                writer.add_scalar("test_loss", metrics["loss"])
-                writer.add_scalar("test_accuracy", metrics["accuracy"])
+                writer.add_scalar("test_loss", metrics["loss"], trainer.state.epoch)
+                writer.add_scalar(
+                    "test_accuracy", metrics["accuracy"], trainer.state.epoch
+                )
+
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def checkpoint_model(trainer):
+            checkpoint_dir = out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            torch.save(self.model, checkpoint_dir / "model.pt")
 
         # Start training.
         max_epochs = 1 if dry_run else config.get("epochs", 5)
@@ -259,7 +271,6 @@ class TorchImageClassificationWrapper(ModelWrapper):
         trainer.run(train_loader, max_epochs=max_epochs, epoch_length=epoch_length)
 
         # Save the trained model.
-        # TODO: Create checkpoints during training.
         torch.save(self.model, out_dir / "model.pt")
 
     @classmethod
