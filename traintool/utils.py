@@ -30,6 +30,9 @@ class DummyExperiment:
     def test(self):
         return DummyWith()
 
+    def validate(self):
+        return DummyWith()
+
     def log_metric(self, name, value, step=None):
         pass
 

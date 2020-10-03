@@ -109,7 +109,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 pretrained=pretrained
             )
 
-    def _preprocess(self, data, config: dict, train: bool = False):
+    def _preprocess(
+        self, data, config: dict, train: bool = False, use_cuda: bool = False
+    ):
         # Handle empty dataset
         if data is None:
             return None
@@ -122,9 +124,13 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # TODO
 
         # Wrap in data loader.
-        # TODO: Change kwargs if running on GPU.
         kwargs = {"batch_size": config.get("batch_size", 128)}
-        data_loader = DataLoader(data, shuffle=train, **kwargs)
+        if train:
+            kwargs["shuffle"] = True
+        if use_cuda:
+            kwargs["pin_memory"] = True
+            kwargs["num_workers"] = 1
+        data_loader = DataLoader(data, **kwargs)
 
         return data_loader
 
@@ -158,7 +164,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             return optim.SGD(params, lr=config.get("lr", 0.1), **kwargs)
         else:
             raise ValueError(f"Optimizer not known: {optimizer_name}")
-        
+
         # TODO: Implement other optimizers.
 
     def train(
@@ -176,10 +182,14 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         self.out_dir = out_dir
 
+        use_cuda = torch.cuda.is_available()
+
         # Preprocess all datasets.
-        train_loader = self._preprocess(train_data, config, train=True)
-        val_loader = self._preprocess(val_data, config)
-        test_loader = self._preprocess(test_data, config)
+        train_loader = self._preprocess(
+            train_data, config, train=True, use_cuda=use_cuda
+        )
+        val_loader = self._preprocess(val_data, config, use_cuda=use_cuda)
+        test_loader = self._preprocess(test_data, config, use_cuda=use_cuda)
 
         # # Convert data to torch dataset.
         # train_data, test_data = data_utils.to_torch(train_data, test_data)
@@ -191,26 +201,41 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # test_loader = torch.utils.data.DataLoader(test_data, **kwargs)
 
         # Set up everything for training and iterate through epochs.
-        # TODO: Implement GPU mode.
-        device = torch.device("cpu")
+        device = torch.device("cuda" if use_cuda else "cpu")
         self._create_model(config)
-
         optimizer = self._create_optimizer(config, self.model.parameters())
-        # TODO: Re-enable scheduler. 
-        #scheduler = StepLR(optimizer, step_size=1, gamma=config.get("gamma", 0.7))
+        loss_func = nn.CrossEntropyLoss()
+
+        # TODO: Re-enable scheduler.
+        # scheduler = StepLR(optimizer, step_size=1, gamma=config.get("gamma", 0.7))
         for epoch in range(1, config.get("epochs", 5) + 1):
             self._train_epoch(
                 config=config,
                 device=device,
                 train_loader=train_loader,
                 optimizer=optimizer,
+                loss_func=loss_func,
                 epoch=epoch,
                 experiment=experiment,
                 dry_run=dry_run,
             )
-            # TODO: Handle validation data.
-            self._test(device=device, test_loader=test_loader, experiment=experiment)
-            #scheduler.step()
+            if val_data is not None:
+                self._evaluate(
+                    device=device,
+                    loader=val_loader,
+                    loss_func=loss_func,
+                    experiment=experiment,
+                    is_val=True,
+                )
+            if test_data is not None:
+                self._evaluate(
+                    device=device,
+                    loader=test_loader,
+                    loss_func=loss_func,
+                    experiment=experiment,
+                )
+            
+            # scheduler.step()
 
             # TODO: Checkpoint model.
             torch.save(self.model, out_dir / "model.pt")
@@ -224,81 +249,82 @@ class TorchImageClassificationWrapper(ModelWrapper):
         device: torch.device,
         train_loader: DataLoader,
         optimizer: optim.Optimizer,
+        loss_func,
         epoch: int,
         experiment,
         dry_run: bool,
     ) -> None:
         with experiment.train():
             self.model.train()
-            for batch_idx, (data, target) in enumerate(train_loader):
-                data, target = data.to(device), target.to(device)
+            for batch, (inputs, labels) in enumerate(train_loader):
+
+                # Move data to cpu or gpu.
+                inputs, labels = inputs.to(device), labels.to(device)
+
+                # Reset optimizer.
                 optimizer.zero_grad()
-                output = self.model(data)
-                pred = output.argmax(
-                    dim=1, keepdim=True
-                )  # get the index of the max log-probability
-                correct = pred.eq(target.view_as(pred)).sum().item()
-                loss = F.nll_loss(output, target)
+
+                # Run inputs through network.
+                output = self.model(inputs)
+                loss = loss_func(output, labels)
+                pred_labels = output.argmax(dim=1, keepdim=True)
+                correct = pred_labels.eq(labels.view_as(pred_labels)).sum().item()
+                acc = 100 * correct / len(inputs)
+
+                # Backprop and optimize.
                 loss.backward()
                 optimizer.step()  # this somehow tracks the loss already
 
-                if batch_idx % 10 == 0:
+                if batch % 10 == 0:
                     # Track metrics to comet.ml
                     # Loss is already tracked through optimizer.step above even though I don't
                     # really get how.
-                    # experiment.log_metric("loss", loss.item(), step=batch_idx)
-                    experiment.log_metric(
-                        "accuracy",
-                        correct / config.get("batch_size", 128),
-                        step=batch_idx,
-                    )
+                    # experiment.log_metric("loss", loss.item(), step=batch)
+                    experiment.log_metric("accuracy", acc, step=batch)
 
+                    # Print metrics.
+                    # TODO: This currently tracks the metrics only for the current batch.
+                    #   Use running metrics instead, maybe using pytorch lightning or Ignite or fast.ai.
                     print(
-                        "Train Epoch {}: Sample {}/{} ({:.0f}%)\tLoss: {:.6f}\tAccuracy: {:.6f}".format(
-                            epoch,
-                            batch_idx * len(data),
-                            len(train_loader.dataset),
-                            100.0 * batch_idx / len(train_loader),
-                            loss.item(),
-                            correct / config.get("batch_size", 128),
-                        )
+                        f"Train epoch {epoch}, batch {batch}/{len(train_loader.dataset)}:\tLoss: {loss.item():.3f}\tAccuracy: {acc:.3f}"
                     )
 
                 if dry_run:
                     break
 
-    def _test(
-        self, device: torch.device, test_loader: torch.utils.data.DataLoader, experiment
+    def _evaluate(
+        self,
+        device: torch.device,
+        loader: DataLoader,
+        loss_func,
+        experiment,
+        is_val: bool = False,
     ) -> None:
-        with experiment.test():
+        cm = experiment.validate() if is_val else experiment.train()
+        with cm:
             self.model.eval()
-            test_loss = 0
+            running_loss = 0
             correct = 0
             with torch.no_grad():
-                for data, target in test_loader:
-                    data, target = data.to(device), target.to(device)
-                    output = self.model(data)
-                    test_loss += F.nll_loss(
-                        output, target, reduction="sum"
-                    ).item()  # sum up batch loss
-                    pred = output.argmax(
-                        dim=1, keepdim=True
-                    )  # get the index of the max log-probability
-                    correct += pred.eq(target.view_as(pred)).sum().item()
+                for inputs, labels in loader:
+                    inputs, labels = inputs.to(device), labels.to(device)
+                    output = self.model(inputs)
+                    running_loss += (
+                        loss_func(output, labels).mean().item()
+                    )  # sum up batch loss
+                    pred_labels = output.argmax(dim=1, keepdim=True)
+                    correct += pred_labels.eq(labels.view_as(pred_labels)).sum().item()
 
-            test_loss /= len(test_loader.dataset)
+            running_loss /= len(loader.dataset)
+            acc = 100 * correct / len(loader.dataset)
 
             # Track metrics to comet.ml
-            experiment.log_metric("loss", test_loss)
-            experiment.log_metric("accuracy", correct / len(test_loader.dataset))
+            experiment.log_metric("loss", running_loss)
+            experiment.log_metric("accuracy", correct / len(loader.dataset))
 
             print(
-                "\nTest: Loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
-                    test_loss,
-                    correct,
-                    len(test_loader.dataset),
-                    100.0 * correct / len(test_loader.dataset),
-                )
+                "Val:" if is_val else "Val:",
+                f"Loss: {running_loss:.3f}, Accuracy: {acc:.3f}",
             )
 
     # def save(self, out_dir: Union[Path, str]):

@@ -37,11 +37,12 @@ def test_create_model():
     assert wrapper.model.n_estimators == 10
 
 
-@pytest.mark.parametrize(
-    "data_format", ["numpy", "torch"],
-)
-def test_train(data_format, tmp_path):
-    data = create_image_classification_data(output_format=data_format, grayscale=True)
+@pytest.mark.parametrize("data_format", ["numpy", "torch"])
+@pytest.mark.parametrize("grayscale", [True, False])
+def test_train(data_format, grayscale, tmp_path):
+    data = create_image_classification_data(
+        output_format=data_format, grayscale=grayscale, size=28
+    )
     wrapper = SklearnImageClassificationWrapper("random-forest")
 
     wrapper.train(

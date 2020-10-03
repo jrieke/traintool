@@ -18,72 +18,26 @@ from traintool.image_classification.torch_models import (
 from traintool.utils import DummyExperiment
 
 
-# @pytest.mark.parametrize(
-#     "model_id,data_format",
-#     [
-#         ("simple-cnn", "numpy"),
-#         ("simple-cnn", "torch"),
-#         ("resnet18", "numpy"),
-#         ("resnet18", "torch"),
-#     ],
-# )
-# def test_train(model_id, data_format, config, tmp_path):
-#     """
-#     Test SimpleCnnWrapper.train_and_save by checking that the method runs without errors
-#     (does not control if the model actually learns!).
-#     """
-#     # TODO: Maybe refactor to one method for all models
-
-#     # Create temp output dir.
-#     out_dir = tmp_path / data_format
-#     out_dir.mkdir(parents=True, exist_ok=True)
-
-#     # Create data.
-#     data = create_image_classification_data(
-#         output_format=data_format, grayscale=(model_id == "simple-cnn")
-#     )
-
-#     # Call train_and_save method.
-#     wrapper = TorchImageClassificationWrapper(model_id)
-#     wrapper.train(
-#         train_data=data,
-#         val_data=data,
-#         test_data=data,
-#         config=config,
-#         experiment=DummyExperiment(),
-#         out_dir=out_dir,
-#         dry_run=False,
-#     )
-
-
-# @pytest.mark.parametrize(
-#     "model_id,stride", [("simple-cnn", (1, 1)), ("resnet18", (2, 2))]
-# )
-# def test_create_model(model_id, stride):
-#     """Test SimpleCnnWrapper.create_model by checking stride of first conv layer."""
-#     wrapper = TorchImageClassificationWrapper(model_id)
-#     wrapper._create_model()
-#     # Check stride of first conv layer. This is just a random check. Cannot compare
-#     # models directly because weights differ at each initialization.
-#     assert wrapper.model.conv1.stride == stride
-
 # TODO: Maybe persist this on module level to save time.
-# @pytest.fixture
-# def wrapper(tmp_path):
-#     """A simple wrapper around random-forest model"""
-#     data = create_image_classification_data(grayscale=True)
-#     wrapper = SklearnImageClassificationWrapper("random-forest")
-#     wrapper.train(
-#         train_data=data,
-#         val_data=None,
-#         test_data=None,
-#         config={},
-#         writer=SummaryWriter(write_to_disk=False),
-#         experiment=DummyExperiment(),
-#         out_dir=tmp_path,
-#         dry_run=True,
-#     )
-#     return wrapper
+@pytest.fixture
+def wrapper(tmp_path):
+    """A simple wrapper around random-forest model"""
+    data = create_image_classification_data(
+        output_format="torch", grayscale=False, size=224
+    )
+    wrapper = TorchImageClassificationWrapper("resnet18")
+    wrapper.train(
+        train_data=data,
+        val_data=None,
+        test_data=None,
+        config={},
+        writer=SummaryWriter(write_to_disk=False),
+        experiment=DummyExperiment(),
+        out_dir=tmp_path,
+        dry_run=True,
+    )
+    return wrapper
+
 
 
 def test_create_model():
@@ -113,30 +67,40 @@ def test_preprocess(data_format):
 def test_create_optimizer():
     wrapper = TorchImageClassificationWrapper("resnet18")
     params = [nn.Parameter(torch.zeros(1))]
-    
+
     # default
     default_optimizer = wrapper._create_optimizer({}, params)
     assert isinstance(default_optimizer, optim.Optimizer)
-    
+
     # adadelta
     adadelta = wrapper._create_optimizer({"optimizer": "adadelta"}, params)
     assert isinstance(adadelta, optim.Adadelta)
-    
+
     # adadelta with lr
-    adadelta_lr = wrapper._create_optimizer({"optimizer": "adadelta", "lr": 123}, params)
+    adadelta_lr = wrapper._create_optimizer(
+        {"optimizer": "adadelta", "lr": 123}, params
+    )
     assert isinstance(adadelta, optim.Adadelta)
     assert adadelta_lr.defaults["lr"] == 123
-    
+
     # unknown optimizer
     with pytest.raises(ValueError):
         wrapper._create_optimizer({"optimizer": "unknown-optimizer123"}, params)
-    
 
 
 @pytest.mark.parametrize("data_format", ["numpy", "torch"])
 def test_train(data_format, tmp_path):
-    data = create_image_classification_data(output_format=data_format, grayscale=True)
-    wrapper = TorchImageClassificationWrapper("simple-cnn")
+    # TODO: Test for grayscale = False and different size.
+    # data = create_image_classification_data(
+    #     output_format=data_format, size=28, grayscale=True
+    # )
+    # wrapper = TorchImageClassificationWrapper("simple-cnn")
+    data = create_image_classification_data(
+        output_format=data_format, size=224, grayscale=False
+    )
+    wrapper = TorchImageClassificationWrapper("resnet18")
+
+    # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
 
     wrapper.train(
         train_data=data,
@@ -153,14 +117,13 @@ def test_train(data_format, tmp_path):
     assert (tmp_path / "model.pt").exists()
 
 
-# def test_load(wrapper):
-#     loaded_wrapper = SklearnImageClassificationWrapper.load(
-#         wrapper.out_dir, "random-forest"
-#     )
-#     assert isinstance(loaded_wrapper.model, RandomForestClassifier)
-#     assert loaded_wrapper.scaler is not None
+def test_load(wrapper):
+    loaded_wrapper = TorchImageClassificationWrapper.load(wrapper.out_dir, "resnet18")
+    assert isinstance(loaded_wrapper.model, nn.Module)
+    # TODO: Maybe do some more tests here.
 
 
+# TOOD: Enable this once the preprocessing is done properly.
 # def test_predict(wrapper):
 #     data = create_image_classification_data(grayscale=True)
 #     result = wrapper.predict(data[0][0:1])
@@ -168,7 +131,7 @@ def test_train(data_format, tmp_path):
 #     assert "probabilities" in result
 
 
-# def test_raw(wrapper):
-#     raw = wrapper.raw()
-#     assert "model" in raw
-#     assert "scaler" in raw
+def test_raw(wrapper):
+    raw = wrapper.raw()
+    assert "model" in raw
+    assert isinstance(raw["model"], nn.Module)
