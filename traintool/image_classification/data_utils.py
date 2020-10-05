@@ -4,30 +4,40 @@ from torch.utils.data import Dataset, TensorDataset
 from typing import List, Tuple
 
 
-def to_torch(data) -> Dataset:
-    """Convert data from any format to torch datasets."""
+def recognize_data_format(data) -> str:
+    """Returns a string which describes the data format of `data`."""
     if isinstance(data, Dataset):
-        return data
-    elif isinstance(data, list) and isinstance(data[0], np.ndarray):
-        return numpy_to_torch(data)
+        return "pytorch-dataset"
+    elif (
+        len(data) == 2
+        and isinstance(data[0], np.ndarray)
+        and isinstance(data[1], np.ndarray)
+    ):
+        return "numpy"
     else:
         raise ValueError(
             "Could not recognize data format. Supported formats: list of numpy arrays "
             "[images, labels], torch dataset"
         )
+    # TODO: Maybe add pytorch tensors.
+
+
+def to_torch(data) -> Dataset:
+    """Convert data from any format to torch datasets."""
+    data_format = recognize_data_format(data)
+    if data_format == "pytorch-dataset":
+        return data
+    elif data_format == "numpy":
+        return numpy_to_torch(data)
 
 
 def to_numpy(data) -> List[np.ndarray]:
     """Convert data from any format to lists of numpy arrays [input, target]."""
-    if isinstance(data, Dataset):
+    data_format = recognize_data_format(data)
+    if data_format == "pytorch-dataset":
         return torch_to_numpy(data)
-    elif isinstance(data, list) and isinstance(data[0], np.ndarray):
+    elif data_format == "numpy":
         return data
-    else:
-        raise ValueError(
-            "Could not recognize data format. Supported formats: list of numpy arrays "
-            "[images, labels], torch dataset"
-        )
 
 
 def numpy_to_torch(data: List[np.ndarray],) -> Dataset:

@@ -122,7 +122,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
         data = data_utils.to_torch(data)
 
         # Transform and normalize according to https://pytorch.org/docs/stable/torchvision/models.html
-        # Note that inception_v3 requires 3 x 299 x 299
+        # Size: 3 x 224 x 224 (channels x height x widht) - note that inception_v3 requires 3 x 299 x 299
+        # Loaded into [0, 1] range
+        # Normalized with:
+        # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        #                                  std=[0.229, 0.224, 0.225])
         # TODO
 
         # Wrap in data loader.
