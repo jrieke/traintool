@@ -55,7 +55,7 @@ def test_preprocess(data_format):
     data = create_image_classification_data(output_format=data_format)
     wrapper = TorchImageClassificationWrapper("resnet18")
     batch_size = 2
-    data_loader = wrapper._preprocess(data, {"batch_size": batch_size})
+    data_loader = wrapper._preprocess_for_training(data, {"batch_size": batch_size})
     assert isinstance(data_loader, DataLoader)
     batch_images, batch_labels = next(iter(data_loader))
     assert len(batch_images) == batch_size

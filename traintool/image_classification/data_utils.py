@@ -52,7 +52,7 @@ def to_numpy(data) -> List[np.ndarray]:
         return data
 
 
-def numpy_to_torch(data: List[np.ndarray],) -> Dataset:
+def numpy_to_torch(data: List[np.ndarray], size=None) -> Dataset:
     """Convert data from list of numpy arrays [input, target] to torch datasets."""
 
     # Unpack arrays.

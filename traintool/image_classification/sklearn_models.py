@@ -60,7 +60,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         except TypeError:
             self.model = classifier_dict[self.model_name](**config)
 
-    def _preprocess_predict(self, images: np.ndarray):
+    def _preprocess_for_prediction(self, images: np.ndarray):
         """Preprocess images for use in training and prediction."""
         # Flatten images.
         images = images.reshape(len(images), -1)
@@ -69,7 +69,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         images = self.scaler.transform(images)
         return images
 
-    def _preprocess(self, data, train: bool = False):
+    def _preprocess_for_training(self, data, train: bool = False):
         """Preprocess a dataset with images and labels for use in training."""
 
         # Return for empty val/test data.
@@ -112,9 +112,9 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         self.out_dir = out_dir
 
         # Preprocess all datasets.
-        train_images, train_labels = self._preprocess(train_data, train=True)
-        val_images, val_labels = self._preprocess(val_data)
-        test_images, test_labels = self._preprocess(test_data)
+        train_images, train_labels = self._preprocess_for_training(train_data, train=True)
+        val_images, val_labels = self._preprocess_for_training(val_data)
+        test_images, test_labels = self._preprocess_for_training(test_data)
 
         # Create and fit model.
         self._create_model(config)
@@ -156,7 +156,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         """Runs data through the model and returns output."""
         # TODO: This needs batch of images now. Any chance to deal with a single image here?
         # TODO: This needs numpy right now. Deal with torch tensor and file.
-        images = self._preprocess_predict(data)
+        images = self._preprocess_for_prediction(data)
         probabilities = self.model.predict_proba(images)
         predicted_class = np.argmax(probabilities)
         return {"predicted_class": predicted_class, "probabilities": probabilities}

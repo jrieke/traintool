@@ -10,3 +10,4 @@ uvicorn
 joblib
 tensorboardX
 tensorboard
+imgaug

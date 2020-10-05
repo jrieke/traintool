@@ -111,7 +111,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 pretrained=pretrained
             )
 
-    def _preprocess(
+    def _preprocess_for_training(
         self, data, config: dict, train: bool = False, use_cuda: bool = False
     ):
         # Handle empty dataset
@@ -189,11 +189,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
         use_cuda = torch.cuda.is_available()
 
         # Preprocess all datasets.
-        train_loader = self._preprocess(
+        train_loader = self._preprocess_for_training(
             train_data, config, train=True, use_cuda=use_cuda
         )
-        val_loader = self._preprocess(val_data, config, use_cuda=use_cuda)
-        test_loader = self._preprocess(test_data, config, use_cuda=use_cuda)
+        val_loader = self._preprocess_for_training(val_data, config, use_cuda=use_cuda)
+        test_loader = self._preprocess_for_training(test_data, config, use_cuda=use_cuda)
 
         # Set up model, optimizer, loss.
         device = torch.device("cuda" if use_cuda else "cpu")
