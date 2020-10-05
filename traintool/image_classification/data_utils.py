@@ -2,23 +2,35 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, TensorDataset
 from typing import List, Tuple
+from pathlib import Path
 
 
 def recognize_data_format(data) -> str:
     """Returns a string which describes the data format of `data`."""
     if isinstance(data, Dataset):
         return "pytorch-dataset"
-    elif (
-        len(data) == 2
-        and isinstance(data[0], np.ndarray)
-        and isinstance(data[1], np.ndarray)
-    ):
-        return "numpy"
-    else:
-        raise ValueError(
-            "Could not recognize data format. Supported formats: list of numpy arrays "
-            "[images, labels], torch dataset"
-        )
+    
+    try:
+        if (
+            len(data) == 2
+            and isinstance(data[0], np.ndarray)
+            and isinstance(data[1], np.ndarray)
+        ):
+            return "numpy"
+    except TypeError:  # no iterable
+        pass
+    
+    try: 
+        if Path(data).exists():
+            return "files"
+        else:
+            raise FileNotFoundError(f"Data directory not found: {data}")
+    except TypeError:  # not a file or dir
+        pass 
+            
+    raise ValueError("Data format not recognized. Supported formats: list of numpy "
+                     "arrays, torch dataset, directory of image files")
+            
     # TODO: Maybe add pytorch tensors.
 
 
