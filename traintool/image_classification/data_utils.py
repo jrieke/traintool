@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import Dataset, TensorDataset
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from pathlib import Path
 
 
@@ -52,8 +52,12 @@ def to_numpy(data) -> List[np.ndarray]:
         return data
 
 
-def numpy_to_torch(data: List[np.ndarray], size=None) -> Dataset:
+def numpy_to_torch(data: List[np.ndarray]) -> Union[Dataset, None]:
     """Convert data from list of numpy arrays [input, target] to torch datasets."""
+    
+    # Handle empty dataset.
+    if data is None:
+        return None
 
     # Unpack arrays.
     images, labels = data

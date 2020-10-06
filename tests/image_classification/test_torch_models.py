@@ -51,16 +51,24 @@ def test_create_model():
 
 
 @pytest.mark.parametrize("data_format", ["numpy", "torch"])
-def test_preprocess(data_format):
-    data = create_image_classification_data(output_format=data_format)
+@pytest.mark.parametrize("grayscale", [True, False])
+def test_preprocess_for_training(data_format, grayscale):
+    # TODO: Check for grayscale images as well.
+    data = create_image_classification_data(output_format=data_format, grayscale=grayscale)
     wrapper = TorchImageClassificationWrapper("resnet18")
     batch_size = 2
-    data_loader = wrapper._preprocess_for_training(data, {"batch_size": batch_size})
-    assert isinstance(data_loader, DataLoader)
-    batch_images, batch_labels = next(iter(data_loader))
-    assert len(batch_images) == batch_size
-    assert len(batch_labels) == batch_size
-    # TODO: Check shape of images once they are processed correctly.
+    loaders = wrapper._preprocess_for_training(
+        data, data, data, config={"batch_size": batch_size}
+    )
+
+    for loader in loaders:
+        assert isinstance(loader, DataLoader)
+        images, labels = next(iter(loader))
+        assert len(images) == batch_size
+        assert len(labels) == batch_size
+        assert images.shape[1] == 3
+        assert images.shape[2] == 224
+        assert images.shape[3] == 224
 
 
 def test_create_optimizer():

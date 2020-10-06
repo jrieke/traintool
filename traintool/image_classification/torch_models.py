@@ -10,6 +10,9 @@ from torch.optim.lr_scheduler import StepLR
 from typing import Union
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
+import imgaug.augmenters as iaa
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 # from loguru import logger
 
@@ -112,14 +115,96 @@ class TorchImageClassificationWrapper(ModelWrapper):
             )
 
     def _preprocess_for_training(
-        self, data, config: dict, train: bool = False, use_cuda: bool = False
+        self, train_data, val_data, test_data, config: dict, use_cuda: bool = False
     ):
-        # Handle empty dataset
-        if data is None:
-            return None
+        data_format = data_utils.recognize_data_format(train_data)
 
-        # Convert to torch dataset.
-        data = data_utils.to_torch(data)
+        # train_data = data_utils.to_torch(train_data)
+        # val_data = data_utils.to_torch(val_data)
+        # test_data = data_utils.to_torch(test_data)
+
+        if data_format == "numpy":
+            train_images, train_labels = train_data
+            if val_data is not None:
+                val_images, val_labels = val_data
+            if test_data is not None:
+                test_images, test_labels = test_data
+            # TODO: Check if array shapes are correct.
+
+            # Resize to 256x256 and crop to 224x224.
+            # Note: If further augmentations should be done here, need to convert to
+            #   np.uint8 and range [0, 255] first for imgaug to work properly.
+            augmenter = iaa.Sequential(
+                [iaa.Resize(256), iaa.CenterCropToFixedSize(224, 224),]
+            )
+
+            def augment(images):
+                images = images.transpose((0, 2, 3, 1))
+                images = augmenter(images=images)
+                images = np.asarray(images).transpose((0, 3, 1, 2))
+                return images
+
+            train_images = augment(train_images)
+            if val_data is not None:
+                val_images = augment(val_images)
+            if test_data is not None:
+                test_images = augment(test_images)
+
+            # Scale to [0, 1].
+            train_min = np.min(train_images)
+            train_ptp = np.ptp(train_images)
+            train_images = (train_images - train_min) / train_ptp
+            if val_data is not None:
+                val_images = (val_images - train_min) / train_ptp
+            if test_data is not None:
+                test_images = (test_images - train_min) / train_ptp
+            # scaler = MinMaxScaler()
+            # scaler.fit(train_images)
+            # train_images = scaler.transform(train_images)
+            # if val_data is not None:
+            #     val_images = scaler.transform(val_images)
+            # if test_data is not None:
+            #     test_images = scaler.transform(test_images)
+
+            # Check and expand color channels.
+            if train_images.shape[1] == 1:
+                train_images = np.stack((train_images[:, 0],) * 3, axis=1)
+                if val_data is not None:
+                    val_images = np.stack((val_images[:, 0],) * 3, axis=1)
+                if test_data is not None:
+                    test_images = np.stack((test_images[:, 0],) * 3, axis=1)
+
+            # Normalize mean and std according to trained model.
+            def normalize(images):
+                images[:, 0] -= 0.485
+                images[:, 1] -= 0.456
+                images[:, 2] -= 0.406
+                images[:, 0] /= 0.229
+                images[:, 1] /= 0.224
+                images[:, 2] /= 0.225
+
+            normalize(train_images)
+            if val_data is not None:
+                normalize(val_images)
+            if test_data is not None:
+                normalize(test_images)
+
+            # Convert to torch dataset.
+            train_data = data_utils.numpy_to_torch([train_images, val_images])
+            if val_data is not None:
+                val_data = data_utils.numpy_to_torch([val_images, val_labels])
+            if test_data is not None:
+                test_data = data_utils.numpy_to_torch([test_images, test_labels])
+
+        elif data_format == "pytorch-dataset":
+            # TODO: What to do here to transform? Maybe only accept torchvision datasets for now?
+            pass
+
+        elif data_format == "files":
+            # Load files with torchvision dataset.
+
+            # Crop and scale via transforms.
+            pass
 
         # Transform and normalize according to https://pytorch.org/docs/stable/torchvision/models.html
         # Size: 3 x 224 x 224 (channels x height x widht) - note that inception_v3 requires 3 x 299 x 299
@@ -131,14 +216,15 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         # Wrap in data loader.
         kwargs = {"batch_size": config.get("batch_size", 128)}
-        if train:
-            kwargs["shuffle"] = True
         if use_cuda:
             kwargs["pin_memory"] = True
             kwargs["num_workers"] = 1
-        data_loader = DataLoader(data, **kwargs)
 
-        return data_loader
+        train_loader = DataLoader(train_data, shuffle=True, **kwargs)
+        val_loader = DataLoader(val_data, **kwargs) if val_data is not None else None
+        test_loader = DataLoader(test_data, **kwargs) if test_data is not None else None
+
+        return train_loader, val_loader, test_loader
 
     def _create_optimizer(self, config: dict, params) -> optim.Optimizer:
         """Create the optimizer based on the config"""
@@ -189,11 +275,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
         use_cuda = torch.cuda.is_available()
 
         # Preprocess all datasets.
-        train_loader = self._preprocess_for_training(
-            train_data, config, train=True, use_cuda=use_cuda
+        train_loader, val_loader, test_loader = self._preprocess_for_training(
+            train_data, val_data, test_data, config, use_cuda=use_cuda
         )
-        val_loader = self._preprocess_for_training(val_data, config, use_cuda=use_cuda)
-        test_loader = self._preprocess_for_training(test_data, config, use_cuda=use_cuda)
+        # val_loader = self._preprocess_for_training(val_data, config, use_cuda=use_cuda)
+        # test_loader = self._preprocess_for_training(test_data, config, use_cuda=use_cuda)
 
         # Set up model, optimizer, loss.
         device = torch.device("cuda" if use_cuda else "cpu")
