@@ -113,6 +113,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             self.model = getattr(torchvision.models, self.model_name)(
                 pretrained=pretrained
             )
+            
 
     def _preprocess_for_training(
         self, train_data, val_data, test_data, config: dict, use_cuda: bool = False
@@ -124,16 +125,34 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # test_data = data_utils.to_torch(test_data)
 
         if data_format == "numpy":
+            
             train_images, train_labels = train_data
             if val_data is not None:
                 val_images, val_labels = val_data
             if test_data is not None:
                 test_images, test_labels = test_data
-            # TODO: Check if array shapes are correct.
+                
+            # Check if array shapes are correct.
+            # TODO: Check this for val_images and test_images
+            # TODO: Maybe put this into its own function.
+            if not len(train_images.shape) == 4:
+                raise ValueError("Shape of images not understood, should be "
+                                 "num_samples x color_channels x height x width, "
+                                 f"is: {train_images.shape}")
+            if train_images.shape[1] == 1:
+                grayscale = True
+            elif train_images.shape[1] == 3:
+                grayscale = False
+            else:
+                raise ValueError("Shape of images not understood, should have 1 or 3 "
+                                 f"color channels, has {train_images.shape[1]}")
+            
 
             # Resize to 256x256 and crop to 224x224.
             # Note: If further augmentations should be done here, need to convert to
             #   np.uint8 and range [0, 255] first for imgaug to work properly.
+            # TODO: Could also do this more simple by slicing the arrays. Then this 
+            #   could even be done directly in the training loop. 
             augmenter = iaa.Sequential(
                 [iaa.Resize(256), iaa.CenterCropToFixedSize(224, 224),]
             )
@@ -167,7 +186,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             #     test_images = scaler.transform(test_images)
 
             # Check and expand color channels.
-            if train_images.shape[1] == 1:
+            if grayscale:
                 train_images = np.stack((train_images[:, 0],) * 3, axis=1)
                 if val_data is not None:
                     val_images = np.stack((val_images[:, 0],) * 3, axis=1)
@@ -190,7 +209,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 normalize(test_images)
 
             # Convert to torch dataset.
-            train_data = data_utils.numpy_to_torch([train_images, val_images])
+            train_data = data_utils.numpy_to_torch([train_images, train_labels])
             if val_data is not None:
                 val_data = data_utils.numpy_to_torch([val_images, val_labels])
             if test_data is not None:
@@ -198,21 +217,13 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         elif data_format == "pytorch-dataset":
             # TODO: What to do here to transform? Maybe only accept torchvision datasets for now?
-            pass
+            raise NotImplementedError("Pytorch datasets are not supported yet")
 
         elif data_format == "files":
             # Load files with torchvision dataset.
 
             # Crop and scale via transforms.
-            pass
-
-        # Transform and normalize according to https://pytorch.org/docs/stable/torchvision/models.html
-        # Size: 3 x 224 x 224 (channels x height x widht) - note that inception_v3 requires 3 x 299 x 299
-        # Loaded into [0, 1] range
-        # Normalized with:
-        # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-        #                                  std=[0.229, 0.224, 0.225])
-        # TODO
+            raise NotImplementedError("Image file datasets are not supported yet")
 
         # Wrap in data loader.
         kwargs = {"batch_size": config.get("batch_size", 128)}

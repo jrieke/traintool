@@ -23,7 +23,7 @@ from traintool.utils import DummyExperiment
 def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
     data = create_image_classification_data(
-        output_format="torch", grayscale=False, size=224
+        output_format="numpy", grayscale=False, size=224
     )
     wrapper = TorchImageClassificationWrapper("resnet18")
     wrapper.train(
@@ -50,11 +50,13 @@ def test_create_model():
     assert isinstance(wrapper.model, SimpleCnn)
 
 
-@pytest.mark.parametrize("data_format", ["numpy", "torch"])
+# TODO: Test torch datasets as well.
+@pytest.mark.parametrize("data_format", ["numpy"])
 @pytest.mark.parametrize("grayscale", [True, False])
 def test_preprocess_for_training(data_format, grayscale):
-    # TODO: Check for grayscale images as well.
-    data = create_image_classification_data(output_format=data_format, grayscale=grayscale)
+    data = create_image_classification_data(
+        output_format=data_format, grayscale=grayscale
+    )
     wrapper = TorchImageClassificationWrapper("resnet18")
     batch_size = 2
     loaders = wrapper._preprocess_for_training(
@@ -66,6 +68,8 @@ def test_preprocess_for_training(data_format, grayscale):
         images, labels = next(iter(loader))
         assert len(images) == batch_size
         assert len(labels) == batch_size
+        assert len(labels.shape) == 1
+        assert len(images.shape) == 4
         assert images.shape[1] == 3
         assert images.shape[2] == 224
         assert images.shape[3] == 224
@@ -95,17 +99,19 @@ def test_create_optimizer():
         wrapper._create_optimizer({"optimizer": "unknown-optimizer123"}, params)
 
 
-@pytest.mark.parametrize("data_format", ["numpy", "torch"])
-def test_train(data_format, tmp_path):
+# TODO: Test torch datasets.
+@pytest.mark.parametrize("data_format", ["numpy"])
+@pytest.mark.parametrize("grayscale", [True, False])
+def test_train(data_format, grayscale, tmp_path):
     # TODO: Test for grayscale = False and different size.
     # data = create_image_classification_data(
     #     output_format=data_format, size=28, grayscale=True
     # )
     # wrapper = TorchImageClassificationWrapper("simple-cnn")
     data = create_image_classification_data(
-        output_format=data_format, size=28, grayscale=True
+        output_format=data_format, grayscale=grayscale
     )
-    wrapper = TorchImageClassificationWrapper("simple-cnn")
+    wrapper = TorchImageClassificationWrapper("resnet18")
 
     # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
     # TODO: Test with and without val/test data.
