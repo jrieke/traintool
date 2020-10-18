@@ -15,12 +15,12 @@ from traintool.image_classification.data_utils import (
 
 @pytest.fixture
 def numpy_data():
-    return create_image_classification_data(output_format="numpy", seed=0)
+    return create_image_classification_data(data_format="numpy", seed=0)
 
 
 @pytest.fixture
 def torch_data():
-    return create_image_classification_data(output_format="torch", seed=0)
+    return create_image_classification_data(data_format="torch", seed=0)
 
 
 @pytest.fixture

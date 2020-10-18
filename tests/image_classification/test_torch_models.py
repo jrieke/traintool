@@ -23,7 +23,7 @@ from traintool.utils import DummyExperiment
 def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
     data = create_image_classification_data(
-        output_format="numpy", grayscale=False, size=224
+        data_format="numpy", grayscale=False, size=224
     )
     wrapper = TorchImageClassificationWrapper("resnet18")
     wrapper.train(
@@ -51,11 +51,11 @@ def test_create_model():
 
 
 # TODO: Test torch datasets as well.
-@pytest.mark.parametrize("data_format", ["numpy"])
+@pytest.mark.parametrize("data_format", ["numpy", "files"])
 @pytest.mark.parametrize("grayscale", [True, False])
-def test_preprocess_for_training(data_format, grayscale):
+def test_preprocess_for_training(data_format, grayscale, tmp_path):
     data = create_image_classification_data(
-        output_format=data_format, grayscale=grayscale
+        data_format=data_format, grayscale=grayscale, tmp_path=tmp_path,
     )
     wrapper = TorchImageClassificationWrapper("resnet18")
     batch_size = 2
@@ -105,11 +105,11 @@ def test_create_optimizer():
 def test_train(data_format, grayscale, tmp_path):
     # TODO: Test for grayscale = False and different size.
     # data = create_image_classification_data(
-    #     output_format=data_format, size=28, grayscale=True
+    #     data_format=data_format, size=28, grayscale=True
     # )
     # wrapper = TorchImageClassificationWrapper("simple-cnn")
     data = create_image_classification_data(
-        output_format=data_format, grayscale=grayscale
+        data_format=data_format, grayscale=grayscale
     )
     wrapper = TorchImageClassificationWrapper("resnet18")
 

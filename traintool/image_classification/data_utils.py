@@ -5,11 +5,21 @@ from typing import List, Tuple, Union
 from pathlib import Path
 
 
+def channels_first(images: np.ndarray) -> np.ndarray:
+    """Convert images from channels last to channels first format."""
+    return images.transpose((0, 3, 1, 2))
+
+
+def channels_last(images: np.ndarray) -> np.ndarray:
+    """Convert images from channels first to channels last format."""
+    return images.transpose((0, 2, 3, 1))
+
+
 def recognize_data_format(data) -> str:
     """Returns a string which describes the data format of `data`."""
     if isinstance(data, Dataset):
         return "pytorch-dataset"
-    
+
     try:
         if (
             len(data) == 2
@@ -19,18 +29,20 @@ def recognize_data_format(data) -> str:
             return "numpy"
     except TypeError:  # no iterable
         pass
-    
-    try: 
+
+    try:
         if Path(data).exists():
             return "files"
         else:
             raise FileNotFoundError(f"Data directory not found: {data}")
     except TypeError:  # not a file or dir
-        pass 
-            
-    raise ValueError("Data format not recognized. Supported formats: list of numpy "
-                     "arrays, torch dataset, directory of image files")
-            
+        pass
+
+    raise ValueError(
+        "Data format not recognized. Supported formats: list of numpy "
+        "arrays, torch dataset, directory of image files"
+    )
+
     # TODO: Maybe add pytorch tensors.
 
 
@@ -54,7 +66,7 @@ def to_numpy(data) -> List[np.ndarray]:
 
 def numpy_to_torch(data: List[np.ndarray]) -> Union[Dataset, None]:
     """Convert data from list of numpy arrays [input, target] to torch datasets."""
-    
+
     # Handle empty dataset.
     if data is None:
         return None

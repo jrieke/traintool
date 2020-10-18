@@ -41,7 +41,7 @@ def test_create_model():
 @pytest.mark.parametrize("grayscale", [True, False])
 def test_train(data_format, grayscale, tmp_path):
     data = create_image_classification_data(
-        output_format=data_format, grayscale=grayscale, size=28
+        data_format=data_format, grayscale=grayscale, size=28
     )
     wrapper = SklearnImageClassificationWrapper("random-forest")
 

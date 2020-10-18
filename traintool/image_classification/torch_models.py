@@ -113,7 +113,6 @@ class TorchImageClassificationWrapper(ModelWrapper):
             self.model = getattr(torchvision.models, self.model_name)(
                 pretrained=pretrained
             )
-            
 
     def _preprocess_for_training(
         self, train_data, val_data, test_data, config: dict, use_cuda: bool = False
@@ -125,42 +124,54 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # test_data = data_utils.to_torch(test_data)
 
         if data_format == "numpy":
-            
+            # Currently, this requires the following 2 numpy arrays:
+            # - images with shape (num_samples x color_channels x height x width)
+            #   This correspons to channels-first format in the way pytorch uses it.
+            #   color_channels can be either 3 (RGB) or 1 (grayscale; in this case it's
+            #   automatically expanded to 3 equal channels).
+            # - labels with shape (num_samples, )
+            # TODO: Automatically detect channels-first and channels-last, and/or offer
+            #   a config option.
+
             train_images, train_labels = train_data
             if val_data is not None:
                 val_images, val_labels = val_data
             if test_data is not None:
                 test_images, test_labels = test_data
-                
+
             # Check if array shapes are correct.
             # TODO: Check this for val_images and test_images
             # TODO: Maybe put this into its own function.
             if not len(train_images.shape) == 4:
-                raise ValueError("Shape of images not understood, should be "
-                                 "num_samples x color_channels x height x width, "
-                                 f"is: {train_images.shape}")
+                raise ValueError(
+                    "Shape of images not understood, should be "
+                    "num_samples x color_channels x height x width, "
+                    f"is: {train_images.shape}"
+                )
             if train_images.shape[1] == 1:
                 grayscale = True
             elif train_images.shape[1] == 3:
                 grayscale = False
             else:
-                raise ValueError("Shape of images not understood, should have 1 or 3 "
-                                 f"color channels, has {train_images.shape[1]}")
-            
+                raise ValueError(
+                    "Shape of images not understood, should have 1 or 3 "
+                    f"color channels, has {train_images.shape[1]}"
+                )
 
             # Resize to 256x256 and crop to 224x224.
             # Note: If further augmentations should be done here, need to convert to
             #   np.uint8 and range [0, 255] first for imgaug to work properly.
-            # TODO: Could also do this more simple by slicing the arrays. Then this 
-            #   could even be done directly in the training loop. 
+            # TODO: Could also do this more simple by slicing the arrays. Then this
+            #   could even be done directly in the training loop.
             augmenter = iaa.Sequential(
                 [iaa.Resize(256), iaa.CenterCropToFixedSize(224, 224),]
             )
 
             def augment(images):
-                images = images.transpose((0, 2, 3, 1))
+                images = data_utils.channels_last(images)
                 images = augmenter(images=images)
-                images = np.asarray(images).transpose((0, 3, 1, 2))
+                images = np.asarray(images)
+                images = data_utils.channels_first(images)
                 return images
 
             train_images = augment(train_images)
@@ -220,10 +231,31 @@ class TorchImageClassificationWrapper(ModelWrapper):
             raise NotImplementedError("Pytorch datasets are not supported yet")
 
         elif data_format == "files":
-            # Load files with torchvision dataset.
+            # Make transform for loading and converting files.
+            # TODO: Do not load in 224 all the time, if most images are smaller.
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(256),
+                    torchvision.transforms.CenterCrop(224),
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                ]
+            )
 
-            # Crop and scale via transforms.
-            raise NotImplementedError("Image file datasets are not supported yet")
+            # Load images from folder.
+            train_data = torchvision.datasets.ImageFolder(
+                train_data, transform=transform
+            )
+            if val_data is not None:
+                val_data = torchvision.datasets.ImageFolder(
+                    val_data, transform=transform
+                )
+            if test_data is not None:
+                test_data = torchvision.datasets.ImageFolder(
+                    test_data, transform=transform
+                )
 
         # Wrap in data loader.
         kwargs = {"batch_size": config.get("batch_size", 128)}
