@@ -7,17 +7,17 @@ from pathlib import Path
 
 
 def channels_first(images: np.ndarray) -> np.ndarray:
-    """Convert images from channels last to channels first format."""
+    """Converts images from channels last to channels first format."""
     return images.transpose((0, 3, 1, 2))
 
 
 def channels_last(images: np.ndarray) -> np.ndarray:
-    """Convert images from channels first to channels last format."""
+    """Converts images from channels first to channels last format."""
     return images.transpose((0, 2, 3, 1))
 
 
 def recognize_data_format(data) -> str:
-    """Returns a string which describes the data format of `data`."""
+    """Checks the data format and returns "pytorch-dataset" or "numpy" or "files"."""
 
     # Check for pytorch dataset.
     if isinstance(data, Dataset):
@@ -58,10 +58,10 @@ def recognize_data_format(data) -> str:
         "arrays, torch dataset, directory of image files"
     )
 
-    # TODO: Maybe add pytorch tensors.
 
-
-def to_torch(data) -> Union[Dataset, None]:
+def to_torch(
+    data, resize: int = None, crop: int = None, mean: List = None, std: List = None,
+) -> Union[Dataset, None]:
     """Convert data from any format to torch datasets."""
 
     # Handle empty dataset.
@@ -71,16 +71,19 @@ def to_torch(data) -> Union[Dataset, None]:
     # Recognize data format and convert accordingly.
     data_format = recognize_data_format(data)
     if data_format == "pytorch-dataset":
+        # TODO: Maybe apply transformations to torch dataset as well.
         return data
     elif data_format == "numpy":
-        return numpy_to_torch(data)
+        return numpy_to_torch(data, resize=resize, crop=crop, mean=mean, std=std)
     elif data_format == "files":
-        return files_to_torch(data)
+        return files_to_torch(data, resize=resize, crop=crop, mean=mean, std=std)
     else:
         raise RuntimeError()
 
 
-def to_numpy(data) -> Union[List[np.ndarray], None]:
+def to_numpy(
+    data, resize: int = None, crop: int = None, mean: List = None, std: List = None,
+) -> Union[List[np.ndarray], None]:
     """Convert data from any format to lists of numpy arrays [input, target]."""
     # Handle empty dataset.
     if data is None:
@@ -89,11 +92,13 @@ def to_numpy(data) -> Union[List[np.ndarray], None]:
     # Recognize data format and convert accordingly.
     data_format = recognize_data_format(data)
     if data_format == "pytorch-dataset":
+        # TODO: Maybe apply transformations here as well.
         return torch_to_numpy(data)
     elif data_format == "numpy":
+        # TODO: Maybe apply transformations here as well.
         return data
     elif data_format == "files":
-        return files_to_numpy(data)
+        return files_to_numpy(data, resize=resize, crop=crop, mean=mean, std=std)
     else:
         raise RuntimeError()
 
@@ -194,7 +199,7 @@ def files_to_numpy(
     mean: List = None,
     std: List = None,
 ) -> List[np.ndarray]:
-    """Load image files into pytorch dataset and convert to numpy array."""
+    """Load image files into pytorch dataset and convert to numpy arrays."""
     dataset = files_to_torch(root, resize=resize, crop=crop, mean=mean, std=std)
     numpy_data = torch_to_numpy(dataset)
     return numpy_data
@@ -209,8 +214,6 @@ def files_to_torch(
 ) -> Dataset:
     """Load image files into pytorch dataset."""
     # Set up transform for loading and converting files.
-    # TODO: For the sklearn models, this probably shouldn't load in size 224,
-    #   especially in case the images are smaller.
     transform = create_transform(resize=resize, crop=crop, mean=mean, std=std)
 
     # Load images from folder.

@@ -69,7 +69,7 @@ def test_numpy_to_torch(numpy_data, torch_data):
     )
     assert resized_converted_data[0][0].shape[1] == 224
     assert resized_converted_data[0][0].shape[2] == 224
-    
+
 
 def test_files_to_numpy(files_data, numpy_data):
     converted_data = files_to_numpy(files_data)
@@ -80,7 +80,8 @@ def test_files_to_numpy(files_data, numpy_data):
     )
     assert resized_converted_data[0][0].shape[1] == 224
     assert resized_converted_data[0][0].shape[2] == 224
-    
+
+
 def test_files_to_torch(files_data, torch_data):
     converted_data = files_to_torch(files_data)
     assert converted_data[0][0].shape == torch_data[0][0].shape
@@ -90,3 +91,7 @@ def test_files_to_torch(files_data, torch_data):
     )
     assert resized_converted_data[0][0].shape[1] == 224
     assert resized_converted_data[0][0].shape[2] == 224
+
+
+# TODO: Maybe add tests for to_numpy and to_torch, but note that these are kinda
+#   redundant to the tests above.
