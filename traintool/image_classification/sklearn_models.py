@@ -69,7 +69,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         images = self.scaler.transform(images)
         return images
 
-    def _preprocess_for_training(self, data, train: bool = False):
+    def _preprocess_for_training(self, data, is_train: bool = False):
         """Preprocess a dataset with images and labels for use in training."""
 
         # Return for empty val/test data.
@@ -77,7 +77,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             return None, None
 
         # Convert format.
-        data = data_utils.to_numpy(data)
+        data = data_utils.to_numpy(data, resize=28, crop=28)
         images, labels = data
 
         # Flatten.
@@ -85,12 +85,12 @@ class SklearnImageClassificationWrapper(ModelWrapper):
 
         # Scale mean and std.
         # TODO: Maybe make mean and std as config parameters here.
-        if train:
+        if is_train:
             self.scaler = preprocessing.StandardScaler().fit(images)
         images = self.scaler.transform(images)
 
         # Shuffle train set.
-        if train:
+        if is_train:
             images, labels = shuffle(images, labels)
 
         return images, labels
@@ -112,7 +112,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         self.out_dir = out_dir
 
         # Preprocess all datasets.
-        train_images, train_labels = self._preprocess_for_training(train_data, train=True)
+        train_images, train_labels = self._preprocess_for_training(train_data, is_train=True)
         val_images, val_labels = self._preprocess_for_training(val_data)
         test_images, test_labels = self._preprocess_for_training(test_data)
 

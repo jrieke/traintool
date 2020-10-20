@@ -51,28 +51,28 @@ def test_create_model():
 
 
 # TODO: Test torch datasets as well.
-@pytest.mark.parametrize("data_format", ["numpy", "files"])
-@pytest.mark.parametrize("grayscale", [True, False])
-def test_preprocess_for_training(data_format, grayscale, tmp_path):
-    data = create_image_classification_data(
-        data_format=data_format, grayscale=grayscale, tmp_path=tmp_path,
-    )
-    wrapper = TorchImageClassificationWrapper("resnet18")
-    batch_size = 2
-    loaders = wrapper._preprocess_for_training(
-        data, data, data, config={"batch_size": batch_size}
-    )
+# @pytest.mark.parametrize("data_format", ["numpy", "files"])
+# @pytest.mark.parametrize("grayscale", [True, False])
+# def test_preprocess_for_training(data_format, grayscale, tmp_path):
+#     data = create_image_classification_data(
+#         data_format=data_format, grayscale=grayscale, tmp_path=tmp_path,
+#     )
+#     wrapper = TorchImageClassificationWrapper("resnet18")
+#     batch_size = 2
+#     loaders = wrapper._preprocess_for_training(
+#         data, data, data, config={"batch_size": batch_size}
+#     )
 
-    for loader in loaders:
-        assert isinstance(loader, DataLoader)
-        images, labels = next(iter(loader))
-        assert len(images) == batch_size
-        assert len(labels) == batch_size
-        assert len(labels.shape) == 1
-        assert len(images.shape) == 4
-        assert images.shape[1] == 3
-        assert images.shape[2] == 224
-        assert images.shape[3] == 224
+#     for loader in loaders:
+#         assert isinstance(loader, DataLoader)
+#         images, labels = next(iter(loader))
+#         assert len(images) == batch_size
+#         assert len(labels) == batch_size
+#         assert len(labels.shape) == 1
+#         assert len(images.shape) == 4
+#         assert images.shape[1] == 3
+#         assert images.shape[2] == 224
+#         assert images.shape[3] == 224
 
 
 def test_create_optimizer():
@@ -100,7 +100,7 @@ def test_create_optimizer():
 
 
 # TODO: Test torch datasets.
-@pytest.mark.parametrize("data_format", ["numpy"])
+@pytest.mark.parametrize("data_format", ["numpy", "files"])
 @pytest.mark.parametrize("grayscale", [True, False])
 def test_train(data_format, grayscale, tmp_path):
     # TODO: Test for grayscale = False and different size.
@@ -109,7 +109,7 @@ def test_train(data_format, grayscale, tmp_path):
     # )
     # wrapper = TorchImageClassificationWrapper("simple-cnn")
     data = create_image_classification_data(
-        data_format=data_format, grayscale=grayscale
+        data_format=data_format, grayscale=grayscale, tmp_path=tmp_path
     )
     wrapper = TorchImageClassificationWrapper("resnet18")
 

@@ -58,9 +58,9 @@ def create_image_classification_data(
             raise ValueError("tmp_path must be given if data_format is files")
         for i, (image, label) in enumerate(zip(images, labels)):
             image = image.transpose((1, 2, 0))
-            image_dir = tmp_path / f"{label}"
+            image_dir = tmp_path / "data" / f"{label}"
             image_dir.mkdir(parents=True, exist_ok=True)
             imageio.imwrite(image_dir / f"{i}.png", image)
-        return tmp_path
+        return tmp_path / "data"
     else:
         raise ValueError(f"data_format not supported: {data_format}")

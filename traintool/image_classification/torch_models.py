@@ -114,148 +114,139 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 pretrained=pretrained
             )
 
-    def _preprocess_for_training(
-        self, train_data, val_data, test_data, config: dict, use_cuda: bool = False
-    ):
-        # # Handle empty val/test data.
-        # if data is None:
-        #     return None
-        
-        # # Recognize data format and convert accordingly.
-        # data_format = data_utils.recognize_data_format(data)
-        # if data_format == "numpy":
-        #     # Currently, this requires the following 2 numpy arrays:
-        #     # - images with shape (num_samples x color_channels x height x width)
-        #     #   This correspons to channels-first format in the way pytorch uses it.
-        #     #   color_channels can be either 3 (RGB) or 1 (grayscale; in this case it's
-        #     #   automatically expanded to 3 equal channels).
-        #     # - labels with shape (num_samples, )
-        #     # TODO: Automatically detect channels-first and channels-last, and/or offer
-        #     #   a config option.
+    # def _preprocess_for_training(
+    #     self, train_data, val_data, test_data, config: dict, use_cuda: bool = False
+    # ):
+    #     # # Handle empty val/test data.
+    #     # if data is None:
+    #     #     return None
 
-        #     images, labels = data
+    #     # # Recognize data format and convert accordingly.
+    #     # data_format = data_utils.recognize_data_format(data)
+    #     # if data_format == "numpy":
+    #     #     # Currently, this requires the following 2 numpy arrays:
+    #     #     # - images with shape (num_samples x color_channels x height x width)
+    #     #     #   This correspons to channels-first format in the way pytorch uses it.
+    #     #     #   color_channels can be either 3 (RGB) or 1 (grayscale; in this case it's
+    #     #     #   automatically expanded to 3 equal channels).
+    #     #     # - labels with shape (num_samples, )
+    #     #     # TODO: Automatically detect channels-first and channels-last, and/or offer
+    #     #     #   a config option.
 
-        #     # Check if array shapes are correct.
-        #     # TODO: Maybe put this into its own function.
-        #     if not len(images.shape) == 4:
-        #         raise ValueError(
-        #             "Shape of images not understood, should be "
-        #             "num_samples x color_channels x height x width, "
-        #             f"is: {images.shape}"
-        #         )
-        #     if images.shape[1] == 1:
-        #         grayscale = True
-        #     elif images.shape[1] == 3:
-        #         grayscale = False
-        #     else:
-        #         raise ValueError(
-        #             "Shape of images not understood, should have 1 or 3 "
-        #             f"color channels, has {images.shape[1]}"
-        #         )
+    #     #     images, labels = data
 
-        #     # Resize to 256x256 and crop to 224x224.
-        #     # Note: If further augmentations should be done here, need to convert to
-        #     #   np.uint8 and range [0, 255] first for imgaug to work properly.
-        #     # TODO: Could also do this more simple by slicing the arrays. Then this
-        #     #   could even be done directly in the training loop.
-        #     augmenter = iaa.Sequential(
-        #         [iaa.Resize(256), iaa.CenterCropToFixedSize(224, 224),]
-        #     )
-        #     images = data_utils.channels_last(images)
-        #     images = augmenter(images=images)
-        #     images = np.asarray(images)
-        #     images = data_utils.channels_first(images)
-        #         return images
+    #     #     # Check if array shapes are correct.
+    #     #     # TODO: Maybe put this into its own function.
+    #     #     if not len(images.shape) == 4:
+    #     #         raise ValueError(
+    #     #             "Shape of images not understood, should be "
+    #     #             "num_samples x color_channels x height x width, "
+    #     #             f"is: {images.shape}"
+    #     #         )
+    #     #     if images.shape[1] == 1:
+    #     #         grayscale = True
+    #     #     elif images.shape[1] == 3:
+    #     #         grayscale = False
+    #     #     else:
+    #     #         raise ValueError(
+    #     #             "Shape of images not understood, should have 1 or 3 "
+    #     #             f"color channels, has {images.shape[1]}"
+    #     #         )
 
-                
-        # images = self.scaler.transform(images)
-        #     train_min = np.min(train_images)
-        #     train_ptp = np.ptp(train_images)
-        #     train_images = (train_images - train_min) / train_ptp
-        #     if val_data is not None:
-        #         val_images = (val_images - train_min) / train_ptp
-        #     if test_data is not None:
-        #         test_images = (test_images - train_min) / train_ptp
-        #     # scaler = MinMaxScaler()
-        #     # scaler.fit(train_images)
-        #     # train_images = scaler.transform(train_images)
-        #     # if val_data is not None:
-        #     #     val_images = scaler.transform(val_images)
-        #     # if test_data is not None:
-        #     #     test_images = scaler.transform(test_images)
+    #     #     # Resize to 256x256 and crop to 224x224.
+    #     #     # Note: If further augmentations should be done here, need to convert to
+    #     #     #   np.uint8 and range [0, 255] first for imgaug to work properly.
+    #     #     # TODO: Could also do this more simple by slicing the arrays. Then this
+    #     #     #   could even be done directly in the training loop.
+    #     #     augmenter = iaa.Sequential(
+    #     #         [iaa.Resize(256), iaa.CenterCropToFixedSize(224, 224),]
+    #     #     )
+    #     #     images = data_utils.channels_last(images)
+    #     #     images = augmenter(images=images)
+    #     #     images = np.asarray(images)
+    #     #     images = data_utils.channels_first(images)
+    #     #         return images
 
-        #     # Check and expand color channels.
-        #     if grayscale:
-        #         train_images = np.stack((train_images[:, 0],) * 3, axis=1)
-        #         if val_data is not None:
-        #             val_images = np.stack((val_images[:, 0],) * 3, axis=1)
-        #         if test_data is not None:
-        #             test_images = np.stack((test_images[:, 0],) * 3, axis=1)
+    #     # images = self.scaler.transform(images)
+    #     #     train_min = np.min(train_images)
+    #     #     train_ptp = np.ptp(train_images)
+    #     #     train_images = (train_images - train_min) / train_ptp
+    #     #     if val_data is not None:
+    #     #         val_images = (val_images - train_min) / train_ptp
+    #     #     if test_data is not None:
+    #     #         test_images = (test_images - train_min) / train_ptp
+    #     #     # scaler = MinMaxScaler()
+    #     #     # scaler.fit(train_images)
+    #     #     # train_images = scaler.transform(train_images)
+    #     #     # if val_data is not None:
+    #     #     #     val_images = scaler.transform(val_images)
+    #     #     # if test_data is not None:
+    #     #     #     test_images = scaler.transform(test_images)
 
-        #     # Normalize mean and std according to trained model.
-        #     def normalize(images):
-        #         images[:, 0] -= 0.485
-        #         images[:, 1] -= 0.456
-        #         images[:, 2] -= 0.406
-        #         images[:, 0] /= 0.229
-        #         images[:, 1] /= 0.224
-        #         images[:, 2] /= 0.225
+    #     #     # Check and expand color channels.
+    #     #     if grayscale:
+    #     #         train_images = np.stack((train_images[:, 0],) * 3, axis=1)
+    #     #         if val_data is not None:
+    #     #             val_images = np.stack((val_images[:, 0],) * 3, axis=1)
+    #     #         if test_data is not None:
+    #     #             test_images = np.stack((test_images[:, 0],) * 3, axis=1)
 
-        #     normalize(train_images)
-        #     if val_data is not None:
-        #         normalize(val_images)
-        #     if test_data is not None:
-        #         normalize(test_images)
+    #     #     # Normalize mean and std according to trained model.
+    #     #     def normalize(images):
+    #     #         images[:, 0] -= 0.485
+    #     #         images[:, 1] -= 0.456
+    #     #         images[:, 2] -= 0.406
+    #     #         images[:, 0] /= 0.229
+    #     #         images[:, 1] /= 0.224
+    #     #         images[:, 2] /= 0.225
 
-        #     # Convert to torch dataset.
-        #     train_data = data_utils.numpy_to_torch([train_images, train_labels])
-        #     if val_data is not None:
-        #         val_data = data_utils.numpy_to_torch([val_images, val_labels])
-        #     if test_data is not None:
-        #         test_data = data_utils.numpy_to_torch([test_images, test_labels])
+    #     #     normalize(train_images)
+    #     #     if val_data is not None:
+    #     #         normalize(val_images)
+    #     #     if test_data is not None:
+    #     #         normalize(test_images)
 
-        # elif data_format == "pytorch-dataset":
-        #     # TODO: What to do here to transform? Maybe only accept torchvision datasets for now?
-        #     raise NotImplementedError("Pytorch datasets are not supported yet")
+    #     #     # Convert to torch dataset.
+    #     #     train_data = data_utils.numpy_to_torch([train_images, train_labels])
+    #     #     if val_data is not None:
+    #     #         val_data = data_utils.numpy_to_torch([val_images, val_labels])
+    #     #     if test_data is not None:
+    #     #         test_data = data_utils.numpy_to_torch([test_images, test_labels])
 
-        # elif data_format == "files":
-        #     # Make transform for loading and converting files.
-        #     # TODO: Do not load in 224 all the time, if most images are smaller.
-        #     transform = torchvision.transforms.Compose(
-        #         [
-        #             torchvision.transforms.Resize(256),
-        #             torchvision.transforms.CenterCrop(224),
-        #             torchvision.transforms.ToTensor(),
-        #             torchvision.transforms.Normalize(
-        #                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-        #             ),
-        #         ]
-        #     )
+    #     # elif data_format == "pytorch-dataset":
+    #     #     # TODO: What to do here to transform? Maybe only accept torchvision datasets for now?
+    #     #     raise NotImplementedError("Pytorch datasets are not supported yet")
 
-            # # Load images from folder.
-            # train_data = torchvision.datasets.ImageFolder(
-            #     train_data, transform=transform
-            # )
-            # if val_data is not None:
-            #     val_data = torchvision.datasets.ImageFolder(
-            #         val_data, transform=transform
-            #     )
-            # if test_data is not None:
-            #     test_data = torchvision.datasets.ImageFolder(
-            #         test_data, transform=transform
-            #     )
+    #     # elif data_format == "files":
+    #     #     # Make transform for loading and converting files.
+    #     #     # TODO: Do not load in 224 all the time, if most images are smaller.
+    #     #     transform = torchvision.transforms.Compose(
+    #     #         [
+    #     #             torchvision.transforms.Resize(256),
+    #     #             torchvision.transforms.CenterCrop(224),
+    #     #             torchvision.transforms.ToTensor(),
+    #     #             torchvision.transforms.Normalize(
+    #     #                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    #     #             ),
+    #     #         ]
+    #     #     )
 
-        # Wrap in data loader.
-        kwargs = {"batch_size": config.get("batch_size", 128)}
-        if use_cuda:
-            kwargs["pin_memory"] = True
-            kwargs["num_workers"] = 1
+    #         # # Load images from folder.
+    #         # train_data = torchvision.datasets.ImageFolder(
+    #         #     train_data, transform=transform
+    #         # )
+    #         # if val_data is not None:
+    #         #     val_data = torchvision.datasets.ImageFolder(
+    #         #         val_data, transform=transform
+    #         #     )
+    #         # if test_data is not None:
+    #         #     test_data = torchvision.datasets.ImageFolder(
+    #         #         test_data, transform=transform
+    #         #     )
 
-        train_loader = DataLoader(train_data, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_data, **kwargs) if val_data is not None else None
-        test_loader = DataLoader(test_data, **kwargs) if test_data is not None else None
+    #     # Wrap in data loader.
 
-        return train_loader, val_loader, test_loader
+    #     return train_loader, val_loader, test_loader
 
     def _create_optimizer(self, config: dict, params) -> optim.Optimizer:
         """Create the optimizer based on the config"""
@@ -306,11 +297,36 @@ class TorchImageClassificationWrapper(ModelWrapper):
         use_cuda = torch.cuda.is_available()
 
         # Preprocess all datasets.
-        train_loader, val_loader, test_loader = self._preprocess_for_training(
-            train_data, val_data, test_data, config, use_cuda=use_cuda
+        train_data = data_utils.to_torch(
+            train_data,
+            resize=256,
+            crop=224,
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
         )
-        # val_loader = self._preprocess_for_training(val_data, config, use_cuda=use_cuda)
-        # test_loader = self._preprocess_for_training(test_data, config, use_cuda=use_cuda)
+        val_data = data_utils.to_torch(
+            train_data,
+            resize=256,
+            crop=224,
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+        )
+        test_data = data_utils.to_torch(
+            train_data,
+            resize=256,
+            crop=224,
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+        )
+        
+        kwargs = {"batch_size": config.get("batch_size", 128)}
+        if use_cuda:
+            kwargs["pin_memory"] = True
+            kwargs["num_workers"] = 1
+
+        train_loader = DataLoader(train_data, shuffle=True, **kwargs)
+        val_loader = DataLoader(val_data, **kwargs) if val_data is not None else None
+        test_loader = DataLoader(test_data, **kwargs) if test_data is not None else None
 
         # Set up model, optimizer, loss.
         device = torch.device("cuda" if use_cuda else "cpu")
