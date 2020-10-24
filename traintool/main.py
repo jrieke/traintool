@@ -150,11 +150,7 @@ def train(
     Returns:
         ModelWrapper: A wrapper around the original model
     """
-
-    # Create model wrapper based on model_name (checking that model_name is valid)
-    model_wrapper_class = _resolve_model(model_name)
-    model_wrapper = model_wrapper_class(model_name)
-
+    
     # TODO: Disabled for now, so that we can pass parameters more dynamically (e.g. pass
     #   along sklearn model params without specifying them explicitly), think about if
     #   this is still required.
@@ -164,12 +160,11 @@ def train(
     #     config = default_config
     # else:
     #     config = _update_config(default_config, config)
+    
+    # TODO: Create empty config dict here or in model wrappers?
     if config is None:
         config = {}
-
-    # Check that train_data, val_data and test_data have correct format
-    # TODO
-
+        
     # Create out_dir in ~/traintool and file with some general information
     experiment_name = f"{utils.timestamp()}_{model_name}"
     if out_dir is None:
@@ -178,6 +173,13 @@ def train(
     else:
         out_dir = Path(out_dir)
     _write_info_file(out_dir, model_name=model_name, config=config)
+
+    # Create model wrapper based on model_name (checking that model_name is valid)
+    model_wrapper_class = _resolve_model(model_name)
+    model_wrapper = model_wrapper_class(model_name, config, out_dir)
+
+    # Check that train_data, val_data and test_data have correct format
+    # TODO: Do this here or in model files?
 
     # Print some info
     # print("=" * 29, "traintool experiment", "=" * 29)
@@ -210,8 +212,6 @@ def train(
         train_data=train_data,
         val_data=val_data,
         test_data=test_data,
-        config=config,
-        out_dir=out_dir,
         writer=writer,
         experiment=experiment,
         dry_run=dry_run,
@@ -261,7 +261,8 @@ def load(name_or_dir: Union[str, Path]) -> ModelWrapper:
 
     # Resolve model wrapper class and call load method
     model_wrapper_class = _resolve_model(model_name)
-    model_wrapper = model_wrapper_class.load(out_dir, model_name)
+    model_wrapper = model_wrapper_class(model_name, info["config"], out_dir)
+    model_wrapper.load()
     return model_wrapper
 
 

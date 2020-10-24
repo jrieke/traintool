@@ -17,21 +17,18 @@ class ModelWrapper(ABC):
     save/load a model to file or make a prediction. 
     """
 
-    @abstractmethod
-    def __init__(self, model_name: str) -> None:
-        # TODO: Maybe pass config and out_dir here directly, as these can be persisted.
-        pass
+    def __init__(self, model_name: str, config: dict, out_dir: Path) -> None:
+        self.model_name = model_name
+        self.config = config
+        self.out_dir = out_dir
 
-    # TODO: Should train_data and test_data be in a specific file format here, or should
-    #   they be converted in this function, or do we need to leave it open e.g. in case we use generators?
+    # TODO: Maybe make train and load private.
     @abstractmethod
     def train(
         self,
         train_data,
         val_data,
         test_data,
-        config: dict,
-        out_dir: Path,
         writer,
         experiment,
         dry_run: bool = False,
@@ -44,23 +41,23 @@ class ModelWrapper(ABC):
     #     """Saves the model to file."""
     #     pass
 
-    @classmethod
     @abstractmethod
-    def load(cls, out_dir: Path, model_name: str) -> ModelWrapper:
-        """Loads the model from file."""
+    def load(self) -> None:
+        """Loads the model from the out dir."""
         pass
 
+    # TODO: Maybe check in predict, raw, and deploy that model was trained or loaded.
     @abstractmethod
-    def predict(self, data):
+    def predict(self, data) -> dict:
         """Runs data through the model and returns output."""
         pass
 
     @abstractmethod
-    def raw(self):
+    def raw(self) -> dict:
         """Returns a dict of raw model objects."""
         pass
 
-    def deploy(self, **kwargs):
+    def deploy(self, **kwargs) -> None:
         """Deploys the model through a REST API. kwargs are forwarded to uvicorn."""
         app = FastAPI()
 
@@ -121,9 +118,9 @@ class ModelWrapper(ABC):
 #     def raw(self) -> dict:
 #         return {"model": self.model}
 
-    # @staticmethod
-    # def default_config(model_name: str) -> dict:
-    #     return {"dummy_param": 1}
+# @staticmethod
+# def default_config(model_name: str) -> dict:
+#     return {"dummy_param": 1}
 
 
 # class ClassificationModelWrapper(BaseModelWrapper):

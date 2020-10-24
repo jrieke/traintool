@@ -1,3 +1,4 @@
+from pickle import load
 import comet_ml
 import pytest
 import numpy as np
@@ -25,28 +26,26 @@ def wrapper(tmp_path):
     data = create_image_classification_data(
         data_format="numpy", grayscale=False, size=224
     )
-    wrapper = TorchImageClassificationWrapper("resnet18")
+    wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
     wrapper.train(
         train_data=data,
         val_data=None,
         test_data=None,
-        config={},
         writer=SummaryWriter(write_to_disk=False),
         experiment=DummyExperiment(),
-        out_dir=tmp_path,
         dry_run=True,
     )
     return wrapper
 
 
-def test_create_model():
-    wrapper = TorchImageClassificationWrapper("resnet18")
-    wrapper._create_model({})
+def test_create_model(tmp_path):
+    wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
+    wrapper._create_model()
     assert isinstance(wrapper.model, nn.Module)
     # pretrained=True is not tested here because it takes too long
 
-    wrapper = TorchImageClassificationWrapper("simple-cnn")
-    wrapper._create_model({})
+    wrapper = TorchImageClassificationWrapper("simple-cnn", {}, tmp_path)
+    wrapper._create_model()
     assert isinstance(wrapper.model, SimpleCnn)
 
 
@@ -75,28 +74,30 @@ def test_create_model():
 #         assert images.shape[3] == 224
 
 
-def test_create_optimizer():
-    wrapper = TorchImageClassificationWrapper("resnet18")
-    params = [nn.Parameter(torch.zeros(1))]
+def test_create_optimizer(tmp_path):
+    wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
+    wrapper._create_model()
 
     # default
-    default_optimizer = wrapper._create_optimizer({}, params)
+    default_optimizer = wrapper._create_optimizer()
     assert isinstance(default_optimizer, optim.Optimizer)
 
     # adadelta
-    adadelta = wrapper._create_optimizer({"optimizer": "adadelta"}, params)
+    wrapper.config["optimizer"] = "adadelta"
+    adadelta = wrapper._create_optimizer()
     assert isinstance(adadelta, optim.Adadelta)
 
     # adadelta with lr
-    adadelta_lr = wrapper._create_optimizer(
-        {"optimizer": "adadelta", "lr": 123}, params
-    )
+    wrapper.config["optimizer"] = "adadelta"
+    wrapper.config["lr"] = 123
+    adadelta_lr = wrapper._create_optimizer()
     assert isinstance(adadelta, optim.Adadelta)
     assert adadelta_lr.defaults["lr"] == 123
 
     # unknown optimizer
+    wrapper.config["optimizer"] = "unknown-optimizer123"
     with pytest.raises(ValueError):
-        wrapper._create_optimizer({"optimizer": "unknown-optimizer123"}, params)
+        wrapper._create_optimizer()
 
 
 # TODO: Test torch datasets.
@@ -111,7 +112,7 @@ def test_train(data_format, grayscale, tmp_path):
     data = create_image_classification_data(
         data_format=data_format, grayscale=grayscale, tmp_path=tmp_path
     )
-    wrapper = TorchImageClassificationWrapper("resnet18")
+    wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
 
     # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
     # TODO: Test with and without val/test data.
@@ -120,10 +121,8 @@ def test_train(data_format, grayscale, tmp_path):
         train_data=data,
         val_data=data,
         test_data=data,
-        config={},
         writer=SummaryWriter(write_to_disk=False),
         experiment=DummyExperiment(),
-        out_dir=tmp_path,
         dry_run=True,  # True,
     )
 
@@ -132,7 +131,8 @@ def test_train(data_format, grayscale, tmp_path):
 
 
 def test_load(wrapper):
-    loaded_wrapper = TorchImageClassificationWrapper.load(wrapper.out_dir, "resnet18")
+    loaded_wrapper = TorchImageClassificationWrapper("resnet18", {}, wrapper.out_dir)
+    loaded_wrapper.load()
     assert isinstance(loaded_wrapper.model, nn.Module)
     # TODO: Maybe do some more tests here.
 

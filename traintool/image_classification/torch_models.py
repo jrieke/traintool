@@ -100,49 +100,48 @@ class TorchImageClassificationWrapper(ModelWrapper):
     simple CNN for MNIST (simple-cnn, see SimpleCnn class).
     """
 
-    def __init__(self, model_name: str) -> None:
-        self.model_name = model_name
-        self.model = None
-
-    def _create_model(self, config: dict) -> None:
+    def _create_model(self) -> None:
         """Create the model based on self.model_name and store it in self.model."""
         if self.model_name == "simple-cnn":
             self.model = SimpleCnn()
         else:
-            pretrained = config.get("pretrained", False)
+            pretrained = self.config.get("pretrained", False)
             self.model = getattr(torchvision.models, self.model_name)(
                 pretrained=pretrained
             )
 
-
-    def _create_optimizer(self, config: dict, params) -> optim.Optimizer:
+    def _create_optimizer(self) -> optim.Optimizer:
         """Create the optimizer based on the config"""
-        optimizer_name = config.get("optimizer", "adam")
+        model_params = self.model.parameters()
+        optimizer_name = self.config.get("optimizer", "adam")
         if optimizer_name == "adam":
             kwargs = utils.filter_dict(
-                config, ["lr", "betas", "eps", "weight_decay", "amsgrad"]
+                self.config, ["lr", "betas", "eps", "weight_decay", "amsgrad"]
             )
-            return optim.Adadelta(params, **kwargs)
+            return optim.Adadelta(model_params, **kwargs)
         elif optimizer_name == "adadelta":
-            kwargs = utils.filter_dict(config, ["lr", "rho", "eps", "weight_decay"])
-            return optim.Adadelta(params, **kwargs)
+            kwargs = utils.filter_dict(
+                self.config, ["lr", "rho", "eps", "weight_decay"]
+            )
+            return optim.Adadelta(model_params, **kwargs)
         elif optimizer_name == "adagrad":
             kwargs = utils.filter_dict(
-                config,
+                self.config,
                 ["lr", "lr_decay", "weight_decay", "initial_accumulator_value", "eps"],
             )
-            return optim.Adagrad(params, **kwargs)
+            return optim.Adagrad(model_params, **kwargs)
         elif optimizer_name == "rmsprop":
             kwargs = utils.filter_dict(
-                config, ["lr", "alpha", "eps", "weight_decay", "momentum", "centered"]
+                self.config,
+                ["lr", "alpha", "eps", "weight_decay", "momentum", "centered"],
             )
-            return optim.RMSprop(params, **kwargs)
+            return optim.RMSprop(model_params, **kwargs)
         elif optimizer_name == "sgd":
             kwargs = utils.filter_dict(
-                config, ["momentum", "dampening", "weight_decay", "nesterov"]
+                self.config, ["momentum", "dampening", "weight_decay", "nesterov"]
             )
             # In contrast to other optimizers, lr is a required param for SGD.
-            return optim.SGD(params, lr=config.get("lr", 0.1), **kwargs)
+            return optim.SGD(model_params, lr=self.config.get("lr", 0.1), **kwargs)
         else:
             raise ValueError(f"Optimizer not known: {optimizer_name}")
 
@@ -153,14 +152,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
         train_data,
         val_data,
         test_data,
-        config: dict,
-        out_dir: Path,
         writer,
         experiment,
         dry_run: bool = False,
     ) -> None:
 
-        self.out_dir = out_dir
         use_cuda = torch.cuda.is_available()
 
         # Preprocess all datasets.
@@ -185,8 +181,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
         )
-        
-        kwargs = {"batch_size": config.get("batch_size", 128)}
+
+        kwargs = {"batch_size": self.config.get("batch_size", 128)}
         if use_cuda:
             kwargs["pin_memory"] = True
             kwargs["num_workers"] = 1
@@ -197,8 +193,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         # Set up model, optimizer, loss.
         device = torch.device("cuda" if use_cuda else "cpu")
-        self._create_model(config)
-        optimizer = self._create_optimizer(config, self.model.parameters())
+        self._create_model()
+        optimizer = self._create_optimizer()
         loss_func = nn.CrossEntropyLoss()
 
         # Configure trainer and metrics.
@@ -210,7 +206,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
             self.model, metrics=val_metrics, device=device
         )
 
-        @trainer.on(Events.ITERATION_COMPLETED(every=config.get("print_every", 100)))
+        @trainer.on(
+            Events.ITERATION_COMPLETED(every=self.config.get("print_every", 100))
+        )
         def log_training_loss(trainer):
             batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
             print(
@@ -265,24 +263,21 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def checkpoint_model(trainer):
-            checkpoint_dir = out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
+            checkpoint_dir = self.out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             torch.save(self.model, checkpoint_dir / "model.pt")
 
         # Start training.
-        max_epochs = 1 if dry_run else config.get("epochs", 5)
+        max_epochs = 1 if dry_run else self.config.get("epochs", 5)
         epoch_length = 1 if dry_run else None
         trainer.run(train_loader, max_epochs=max_epochs, epoch_length=epoch_length)
 
         # Save the trained model.
-        torch.save(self.model, out_dir / "model.pt")
+        torch.save(self.model, self.out_dir / "model.pt")
 
-    @classmethod
-    def load(cls, out_dir: Path, model_name: str):
+    def load(self) -> None:
         """Loads the model from file."""
-        wrapper = cls(model_name)
-        wrapper.model = torch.load(out_dir / "model.pt")
-        return wrapper
+        self.model = torch.load(self.out_dir / "model.pt")
 
     def predict(self, data) -> dict:
         """Runs data through the model and returns output."""

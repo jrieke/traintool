@@ -45,20 +45,18 @@ class SklearnImageClassificationWrapper(ModelWrapper):
     This wrapper handles sklearn models for image classification.
     """
 
-    def __init__(self, model_name: str) -> None:
-        self.model_name = model_name
-        self.model = None
-
-    def _create_model(self, config: dict) -> None:
+    def _create_model(self) -> None:
         """Create the model based on self.model_name and store it in self.model."""
         # TODO: If there's anything else stored in config besides the classifier params,
         #   remove it here.
         # Some models need probability=True so that we can predict the probability
         # further down.
         try:
-            self.model = classifier_dict[self.model_name](probability=True, **config)
+            self.model = classifier_dict[self.model_name](
+                probability=True, **self.config
+            )
         except TypeError:
-            self.model = classifier_dict[self.model_name](**config)
+            self.model = classifier_dict[self.model_name](**self.config)
 
     def _preprocess_for_prediction(self, images: np.ndarray):
         """Preprocess images for use in training and prediction."""
@@ -100,24 +98,21 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         train_data,
         val_data,
         test_data,
-        config: dict,
-        out_dir: Path,
         writer,
         experiment,
         dry_run: bool = False,
     ) -> None:
         """Trains the model, evaluates it on val/test data and saves it to file."""
 
-        # TODO: Maybe do this in constructor.
-        self.out_dir = out_dir
-
         # Preprocess all datasets.
-        train_images, train_labels = self._preprocess_for_training(train_data, is_train=True)
+        train_images, train_labels = self._preprocess_for_training(
+            train_data, is_train=True
+        )
         val_images, val_labels = self._preprocess_for_training(val_data)
         test_images, test_labels = self._preprocess_for_training(test_data)
 
         # Create and fit model.
-        self._create_model(config)
+        self._create_model()
         self.model.fit(train_images, train_labels)
 
         # Evaluate accuracy on all datasets and log to experiment.
@@ -137,20 +132,17 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             experiment.log_metric("test_accuracy", test_acc)
 
         # Save model.
-        self._save(out_dir)
+        self._save()
 
-    def _save(self, out_dir: Path):
+    def _save(self):
         """Saves the model and scalerto file."""
-        joblib.dump(self.model, out_dir / "model.joblib")
-        joblib.dump(self.scaler, out_dir / "scaler.joblib")
+        joblib.dump(self.model, self.out_dir / "model.joblib")
+        joblib.dump(self.scaler, self.out_dir / "scaler.joblib")
 
-    @classmethod
-    def load(cls, out_dir: Path, model_name: str):
-        """Loads the model from file."""
-        wrapper = cls(model_name)
-        wrapper.model = joblib.load(out_dir / "model.joblib")
-        wrapper.scaler = joblib.load(out_dir / "scaler.joblib")
-        return wrapper
+    def load(self):
+        """Loads the model from the out dir."""
+        self.model = joblib.load(self.out_dir / "model.joblib")
+        self.scaler = joblib.load(self.out_dir / "scaler.joblib")
 
     def predict(self, data):
         """Runs data through the model and returns output."""

@@ -163,9 +163,6 @@ def numpy_to_torch(
         from_numpy=True, resize=resize, crop=crop, mean=mean, std=std
     )
 
-    # [0.485, 0.456, 0.406]
-    # [0.229, 0.224, 0.225]
-
     # Convert labels to tensors.
     labels = torch.from_numpy(labels).long()
 

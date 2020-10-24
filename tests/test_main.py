@@ -27,18 +27,18 @@ def test_resolve_model():
         _resolve_model("non-existing-model-123")
 
 
-def test_update_config():
-    default_config = {"param1": 123, "param2": "hello"}
-    config = {"param2": "hello again"}
-    invalid_config = {"param3": "this doesn't exist"}
+# def test_update_config():
+#     default_config = {"param1": 123, "param2": "hello"}
+#     config = {"param2": "hello again"}
+#     invalid_config = {"param3": "this doesn't exist"}
 
-    updated_config = _update_config(default_config, config)
-    assert isinstance(updated_config, dict)
-    assert len(updated_config.keys()) == 2
-    assert updated_config["param1"] == 123
-    assert updated_config["param2"] == "hello again"
-    with pytest.raises(ValueError):
-        _update_config(default_config, invalid_config)
+#     updated_config = _update_config(default_config, config)
+#     assert isinstance(updated_config, dict)
+#     assert len(updated_config.keys()) == 2
+#     assert updated_config["param1"] == 123
+#     assert updated_config["param2"] == "hello again"
+#     with pytest.raises(ValueError):
+#         _update_config(default_config, invalid_config)
 
 
 def test_write_read_info_file(tmp_path):
