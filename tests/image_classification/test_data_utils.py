@@ -3,6 +3,7 @@ import pytest
 from typing import List
 import numpy as np
 import torch
+from PIL import Image
 
 from conftest import create_image_classification_data
 
@@ -12,6 +13,7 @@ from traintool.image_classification.data_utils import (
     numpy_to_torch,
     files_to_numpy,
     files_to_torch,
+    load_image,
 )
 
 
@@ -95,3 +97,22 @@ def test_files_to_torch(files_data, torch_data):
 
 # TODO: Maybe add tests for to_numpy and to_torch, but note that these are kinda
 #   redundant to the tests above.
+
+
+def test_load_image(tmp_path):
+    data = create_image_classification_data(
+        grayscale=False, data_format="files", tmp_path=tmp_path
+    )
+
+    # Select a random image.
+    image_path = next(data.rglob("*.png"))
+
+    # torch
+    img = load_image(image_path, resize=50, crop=40)
+    assert isinstance(img, torch.Tensor)
+    assert img.shape == (3, 40, 40)
+
+    # numpy
+    img = load_image(image_path, resize=50, crop=40, to_numpy=True)
+    assert isinstance(img, np.ndarray)
+    assert img.shape == (3, 40, 40)

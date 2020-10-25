@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, TensorDataset
 from torchvision import datasets, transforms
 from typing import List, Tuple, Union
 from pathlib import Path
+from PIL import Image
 
 
 def channels_first(images: np.ndarray) -> np.ndarray:
@@ -237,3 +238,25 @@ def create_transform(
     if mean is not None and std is not None:
         t.append(transforms.Normalize(mean=mean, std=std),)
     return transforms.Compose(t)
+
+
+def load_image(
+    filename: Union[str, Path],
+    to_numpy: bool = False,
+    resize: int = None,
+    crop: int = None,
+    mean: list = None,
+    std: list = None,
+) -> torch.Tensor:
+    """Load an image from file, convert it and return as torch or numpy."""
+    filename = Path(filename)
+    img = Image.open(filename).convert("RGB")
+    
+    transform = create_transform(resize=resize, crop =crop, mean=mean, std=std)
+    img_torch = transform(img)
+    
+    if to_numpy:
+        return img_torch.numpy()
+    else:
+        return img_torch
+

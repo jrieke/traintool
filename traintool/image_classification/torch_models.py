@@ -281,7 +281,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
     def predict(self, data) -> dict:
         """Runs data through the model and returns output."""
-        # TODO: Raise error if self.model is None.
+        # TODO: Mabe raise error if self.model is None.
         self.model.eval()
         with torch.no_grad():
             inp = torch.from_numpy(data).float().unsqueeze(dim=0)
