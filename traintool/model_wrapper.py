@@ -22,9 +22,8 @@ class ModelWrapper(ABC):
         self.config = config
         self.out_dir = out_dir
 
-    # TODO: Maybe make train and load private.
     @abstractmethod
-    def train(
+    def _train(
         self,
         train_data,
         val_data,
@@ -42,7 +41,7 @@ class ModelWrapper(ABC):
     #     pass
 
     @abstractmethod
-    def load(self) -> None:
+    def _load(self) -> None:
         """Loads the model from the out dir."""
         pass
 

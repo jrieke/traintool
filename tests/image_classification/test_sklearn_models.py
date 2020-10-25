@@ -17,7 +17,7 @@ def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
     data = create_image_classification_data(grayscale=True)
     wrapper = SklearnImageClassificationWrapper("random-forest", {}, tmp_path)
-    wrapper.train(
+    wrapper._train(
         train_data=data,
         val_data=None,
         test_data=None,
@@ -45,7 +45,7 @@ def test_train(data_format, grayscale, tmp_path):
     )
     wrapper = SklearnImageClassificationWrapper("random-forest", {}, tmp_path)
 
-    wrapper.train(
+    wrapper._train(
         train_data=data,
         val_data=data,
         test_data=data,
@@ -63,7 +63,7 @@ def test_load(wrapper):
     loaded_wrapper = SklearnImageClassificationWrapper(
         "random-forest", {}, wrapper.out_dir
     )
-    loaded_wrapper.load()
+    loaded_wrapper._load()
     assert isinstance(loaded_wrapper.model, RandomForestClassifier)
     assert loaded_wrapper.scaler is not None
 

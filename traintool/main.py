@@ -15,7 +15,7 @@ project_dir = Path.cwd() / "traintool-experiments"
 
 
 def connect_comet(api_key: str = None, project_name: str = None) -> None:
-    """Connect comet.ml account to traintool (required to track metrics)"""
+    """Connect comet.ml account to traintool (required to track metrics)."""
     comet_config["api_key"] = api_key
     comet_config["project_name"] = project_name
 
@@ -208,7 +208,7 @@ def train(
     experiment = _create_comet_experiment(config=config, dry_run=dry_run)
 
     # Start training the model
-    model_wrapper.train(
+    model_wrapper._train(
         train_data=train_data,
         val_data=val_data,
         test_data=test_data,
@@ -262,7 +262,7 @@ def load(name_or_dir: Union[str, Path]) -> ModelWrapper:
     # Resolve model wrapper class and call load method
     model_wrapper_class = _resolve_model(model_name)
     model_wrapper = model_wrapper_class(model_name, info["config"], out_dir)
-    model_wrapper.load()
+    model_wrapper._load()
     return model_wrapper
 
 

@@ -27,7 +27,7 @@ def wrapper(tmp_path):
         data_format="numpy", grayscale=False, size=224
     )
     wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
-    wrapper.train(
+    wrapper._train(
         train_data=data,
         val_data=None,
         test_data=None,
@@ -117,7 +117,7 @@ def test_train(data_format, grayscale, tmp_path):
     # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
     # TODO: Test with and without val/test data.
     # TODO: Check that something was written to writer and experiment.
-    wrapper.train(
+    wrapper._train(
         train_data=data,
         val_data=data,
         test_data=data,
@@ -132,7 +132,7 @@ def test_train(data_format, grayscale, tmp_path):
 
 def test_load(wrapper):
     loaded_wrapper = TorchImageClassificationWrapper("resnet18", {}, wrapper.out_dir)
-    loaded_wrapper.load()
+    loaded_wrapper._load()
     assert isinstance(loaded_wrapper.model, nn.Module)
     # TODO: Maybe do some more tests here.
 

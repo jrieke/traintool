@@ -93,7 +93,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
 
         return images, labels
 
-    def train(
+    def _train(
         self,
         train_data,
         val_data,
@@ -139,7 +139,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         joblib.dump(self.model, self.out_dir / "model.joblib")
         joblib.dump(self.scaler, self.out_dir / "scaler.joblib")
 
-    def load(self):
+    def _load(self):
         """Loads the model from the out dir."""
         self.model = joblib.load(self.out_dir / "model.joblib")
         self.scaler = joblib.load(self.out_dir / "scaler.joblib")

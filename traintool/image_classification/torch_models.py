@@ -147,7 +147,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         # TODO: Implement other optimizers.
 
-    def train(
+    def _train(
         self,
         train_data,
         val_data,
@@ -275,7 +275,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # Save the trained model.
         torch.save(self.model, self.out_dir / "model.pt")
 
-    def load(self) -> None:
+    def _load(self) -> None:
         """Loads the model from file."""
         self.model = torch.load(self.out_dir / "model.pt")
 
