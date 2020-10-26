@@ -5,7 +5,7 @@ from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier
 from tensorboardX import SummaryWriter
 
-from conftest import create_image_classification_data
+from conftest import create_dataset, create_image
 
 from traintool.image_classification import SklearnImageClassificationWrapper
 from traintool.utils import DummyExperiment
@@ -15,7 +15,7 @@ from traintool.utils import DummyExperiment
 @pytest.fixture
 def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
-    data = create_image_classification_data(grayscale=True)
+    data = create_dataset(grayscale=True)
     wrapper = SklearnImageClassificationWrapper("random-forest", {}, tmp_path)
     wrapper._train(
         train_data=data,
@@ -40,7 +40,7 @@ def test_create_model(tmp_path):
 @pytest.mark.parametrize("data_format", ["numpy", "files"])
 @pytest.mark.parametrize("grayscale", [True, False])
 def test_train(data_format, grayscale, tmp_path):
-    data = create_image_classification_data(
+    data = create_dataset(
         data_format=data_format, grayscale=grayscale, size=28, tmp_path=tmp_path,
     )
     wrapper = SklearnImageClassificationWrapper("random-forest", {}, tmp_path)
@@ -68,11 +68,20 @@ def test_load(wrapper):
     assert loaded_wrapper.scaler is not None
 
 
-def test_predict(wrapper):
-    data = create_image_classification_data(grayscale=True)
-    result = wrapper.predict(data[0][0:1])
+@pytest.mark.parametrize("data_format", ["numpy", "files"])
+def test_predict(wrapper, data_format, tmp_path):
+    image = create_image(
+        grayscale=True, data_format=data_format, tmp_path=tmp_path
+    )
+    print(image)
+
+    result = wrapper.predict(image)
     assert "predicted_class" in result
     assert "probabilities" in result
+
+    assert isinstance(result["predicted_class"], int)
+    assert isinstance(result["probabilities"], np.ndarray)
+    # TODO: Assert that length of probabilities is equal to the number of classes.
 
 
 def test_raw(wrapper):

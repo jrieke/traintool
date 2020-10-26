@@ -3,7 +3,7 @@ import pytest
 import yaml
 from tensorboardX import SummaryWriter
 
-from conftest import create_image_classification_data
+from conftest import create_dataset
 
 from traintool.main import (
     connect_comet,
@@ -72,7 +72,7 @@ def test_create_tensorboard_writer(tmp_path):
 
 
 def test_train(tmp_path):
-    train_data = create_image_classification_data()
+    train_data = create_dataset()
 
     with pytest.raises(ValueError):
         train("non-existing-model-123", None)
@@ -94,7 +94,7 @@ def test_train(tmp_path):
 
 
 def test_load(tmp_path):
-    train_data = create_image_classification_data()
+    train_data = create_dataset()
     train(
         "random-forest",
         train_data=train_data,

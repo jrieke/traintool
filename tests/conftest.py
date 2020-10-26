@@ -11,8 +11,9 @@ import imageio
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-
-def create_image_classification_data(
+# TODO: Maybe build generator around this which returns all the possible data formats
+#   that are allowed.
+def create_dataset(
     data_format: str = "numpy",
     size: int = 28,
     grayscale: bool = True,
@@ -26,8 +27,8 @@ def create_image_classification_data(
 
     Args:
         data_format (str, optional): "numpy" (for list of numpy arrays 
-            [images, labels]) or "torch" (for torch.utils.data.Dataset). Defaults to 
-            "numpy".
+            [images, labels]) or "torch" (for torch.utils.data.Dataset) or "files" 
+            (for directory of image files). Defaults to "numpy".
         size (int, optional): Width and height of the images. Defaults to 28.
         grayscale (bool, optional): If True, images are grayscale and of size 28x28, 
             otherwise they have 3 color channels and are 224x224. Defaults to False.
@@ -35,7 +36,7 @@ def create_image_classification_data(
         seed (int, optional): Seed for data generation. Defaults to 0.
 
     Returns:
-        Union[List[np.ndarray], torch.utils.data.Dataset]: The generated fake data. 
+        Union[List[np.ndarray], torch.utils.data.Dataset, Path]: The generated fake data. 
     """
 
     # Create raw data (seeded, so always the same data).
@@ -64,3 +65,17 @@ def create_image_classification_data(
         return tmp_path / "data"
     else:
         raise ValueError(f"data_format not supported: {data_format}")
+
+
+def create_image(data_format: str = "numpy", **kwargs):
+    """Creates a single image, using the same keyword args as create_dataset."""
+    data = create_dataset(data_format=data_format, **kwargs)
+    # TODO: Maybe implement this without relying on create_dataset
+    #   to make it more efficient.
+
+    if data_format == "numpy" or data_format == "torch":
+        return data[0][0]
+    elif data_format == "files":
+        return next(data.rglob("*.png"))
+    else:
+        raise RuntimeError()

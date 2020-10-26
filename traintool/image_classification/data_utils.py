@@ -17,6 +17,7 @@ def channels_last(images: np.ndarray) -> np.ndarray:
     return images.transpose((0, 2, 3, 1))
 
 
+# TODO: Maybe rename to check_data_format.
 def recognize_data_format(data) -> str:
     """Checks the data format and returns "pytorch-dataset" or "numpy" or "files"."""
 
@@ -57,6 +58,39 @@ def recognize_data_format(data) -> str:
     raise ValueError(
         "Data format not recognized. Supported formats: list of numpy "
         "arrays, torch dataset, directory of image files"
+    )
+
+
+def recognize_image_format(image) -> str:
+    """Checks the image format and returns "numpy" or "file"."""
+
+    # Check for numpy array.
+    if isinstance(image, np.ndarray):
+        if len(image.shape) == 3 and (image.shape[0] in [1, 3]):
+            return "numpy"
+        else:
+            raise ValueError(
+                "Shape of image not understood, should be "
+                "color_channels (1 or 3) x height x width, "
+                f"is: {image.shape}"
+            )
+
+    # TODO: Check for torch tensor.
+
+    # Check for path to directory.
+    try:
+        if Path(image).exists():
+            # TODO: Maybe check that image can be read.
+            return "files"
+        else:
+            raise FileNotFoundError(f"Image path does not exist: {image}")
+    except TypeError:  # not a file or dir
+        pass
+
+    # If all checks failed...
+    raise ValueError(
+        "Image format not recognized. Supported formats: numpy arrays, path to image "
+        "file"
     )
 
 
@@ -249,12 +283,16 @@ def load_image(
     std: list = None,
 ) -> torch.Tensor:
     """Load an image from file, convert it and return as torch or numpy."""
+
+    # Load image.
     filename = Path(filename)
     img = Image.open(filename).convert("RGB")
-    
-    transform = create_transform(resize=resize, crop =crop, mean=mean, std=std)
+
+    # Transform.
+    transform = create_transform(resize=resize, crop=crop, mean=mean, std=std)
     img_torch = transform(img)
-    
+
+    # Convert to numpy.
     if to_numpy:
         return img_torch.numpy()
     else:

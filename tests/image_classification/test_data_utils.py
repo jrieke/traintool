@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from conftest import create_image_classification_data
+from conftest import create_dataset, create_image
 
 from traintool.image_classification.data_utils import (
     recognize_data_format,
@@ -14,28 +14,38 @@ from traintool.image_classification.data_utils import (
     files_to_numpy,
     files_to_torch,
     load_image,
+    recognize_image_format,
 )
 
 
 @pytest.fixture
 def numpy_data():
-    return create_image_classification_data(
-        data_format="numpy", seed=0, grayscale=False
-    )
+    return create_dataset(data_format="numpy", seed=0, grayscale=False)
 
 
 @pytest.fixture
 def torch_data():
-    return create_image_classification_data(
-        data_format="torch", seed=0, grayscale=False
-    )
+    return create_dataset(data_format="torch", seed=0, grayscale=False)
 
 
 @pytest.fixture
 def files_data(tmp_path):
-    return create_image_classification_data(
-        data_format="files", seed=0, tmp_path=tmp_path
-    )
+    return create_dataset(data_format="files", seed=0, tmp_path=tmp_path)
+
+
+@pytest.fixture
+def numpy_image():
+    return create_image(data_format="numpy", seed=0, grayscale=False)
+
+
+@pytest.fixture
+def torch_image():
+    return create_image(data_format="torch", seed=0, grayscale=False)
+
+
+@pytest.fixture
+def files_image(tmp_path):
+    return create_image(data_format="files", seed=0, tmp_path=tmp_path)
 
 
 def test_recognize_data_format(numpy_data, torch_data, files_data):
@@ -51,6 +61,21 @@ def test_recognize_data_format(numpy_data, torch_data, files_data):
 
     with pytest.raises(FileNotFoundError):
         recognize_data_format("non/existent/dir/123")
+
+
+def test_recognize_image_format(numpy_image, torch_image, files_image):
+
+    assert recognize_image_format(numpy_image) == "numpy"
+    assert recognize_image_format(files_image) == "files"
+
+    with pytest.raises(ValueError):
+        recognize_image_format(None)
+
+    with pytest.raises(ValueError):
+        recognize_image_format([1, 2, 3])
+
+    with pytest.raises(FileNotFoundError):
+        recognize_image_format("non/existent/file/123")
 
 
 def test_torch_to_numpy(numpy_data, torch_data):
@@ -100,9 +125,7 @@ def test_files_to_torch(files_data, torch_data):
 
 
 def test_load_image(tmp_path):
-    data = create_image_classification_data(
-        grayscale=False, data_format="files", tmp_path=tmp_path
-    )
+    data = create_dataset(grayscale=False, data_format="files", tmp_path=tmp_path)
 
     # Select a random image.
     image_path = next(data.rglob("*.png"))

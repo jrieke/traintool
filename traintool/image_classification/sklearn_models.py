@@ -58,14 +58,16 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         except TypeError:
             self.model = classifier_dict[self.model_name](**self.config)
 
-    def _preprocess_for_prediction(self, images: np.ndarray):
-        """Preprocess images for use in training and prediction."""
-        # Flatten images.
-        images = images.reshape(len(images), -1)
+    # def _preprocess_for_prediction(self, images: np.ndarray):
+    #     """Preprocess images for use in training and prediction."""
+        
+        
+    #     # Flatten images.
+    #     images = images.reshape(len(images), -1)
 
-        # Scale mean and std.
-        images = self.scaler.transform(images)
-        return images
+    #     # Scale mean and std.
+    #     images = self.scaler.transform(images)
+    #     return images
 
     def _preprocess_for_training(self, data, is_train: bool = False):
         """Preprocess a dataset with images and labels for use in training."""
@@ -144,11 +146,21 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         self.model = joblib.load(self.out_dir / "model.joblib")
         self.scaler = joblib.load(self.out_dir / "scaler.joblib")
 
-    def predict(self, data):
+    def predict(self, image):
         """Runs data through the model and returns output."""
         # TODO: This needs batch of images now. Any chance to deal with a single image here?
         # TODO: This needs numpy right now. Deal with torch tensor and file.
-        images = self._preprocess_for_prediction(data)
+        
+        
+        
+        # Flatten images.
+        images = images.reshape(len(images), -1)
+
+        # Scale mean and std.
+        images = self.scaler.transform(images)
+        
+        
+        images = self._preprocess_for_prediction(image)
         probabilities = self.model.predict_proba(images)
         predicted_class = np.argmax(probabilities)
         return {"predicted_class": predicted_class, "probabilities": probabilities}

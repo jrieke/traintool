@@ -10,7 +10,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
-from conftest import create_image_classification_data
+from conftest import create_dataset
 
 from traintool.image_classification.torch_models import (
     TorchImageClassificationWrapper,
@@ -23,7 +23,7 @@ from traintool.utils import DummyExperiment
 @pytest.fixture
 def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
-    data = create_image_classification_data(
+    data = create_dataset(
         data_format="numpy", grayscale=False, size=224
     )
     wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
@@ -53,7 +53,7 @@ def test_create_model(tmp_path):
 # @pytest.mark.parametrize("data_format", ["numpy", "files"])
 # @pytest.mark.parametrize("grayscale", [True, False])
 # def test_preprocess_for_training(data_format, grayscale, tmp_path):
-#     data = create_image_classification_data(
+#     data = create_dataset(
 #         data_format=data_format, grayscale=grayscale, tmp_path=tmp_path,
 #     )
 #     wrapper = TorchImageClassificationWrapper("resnet18")
@@ -105,11 +105,11 @@ def test_create_optimizer(tmp_path):
 @pytest.mark.parametrize("grayscale", [True, False])
 def test_train(data_format, grayscale, tmp_path):
     # TODO: Test for grayscale = False and different size.
-    # data = create_image_classification_data(
+    # data = create_dataset(
     #     data_format=data_format, size=28, grayscale=True
     # )
     # wrapper = TorchImageClassificationWrapper("simple-cnn")
-    data = create_image_classification_data(
+    data = create_dataset(
         data_format=data_format, grayscale=grayscale, tmp_path=tmp_path
     )
     wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
@@ -139,7 +139,7 @@ def test_load(wrapper):
 
 # TOOD: Enable this once the preprocessing is done properly.
 # def test_predict(wrapper):
-#     data = create_image_classification_data(grayscale=True)
+#     data = create_dataset(grayscale=True)
 #     result = wrapper.predict(data[0][0:1])
 #     assert "predicted_class" in result
 #     assert "probabilities" in result
