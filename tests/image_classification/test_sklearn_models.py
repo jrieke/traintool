@@ -15,7 +15,7 @@ from traintool.utils import DummyExperiment
 @pytest.fixture
 def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
-    data = create_dataset(grayscale=True)
+    data = create_dataset(grayscale=False)
     wrapper = SklearnImageClassificationWrapper("random-forest", {}, tmp_path)
     wrapper._train(
         train_data=data,
@@ -70,18 +70,18 @@ def test_load(wrapper):
 
 @pytest.mark.parametrize("data_format", ["numpy", "files"])
 def test_predict(wrapper, data_format, tmp_path):
-    image = create_image(
-        grayscale=True, data_format=data_format, tmp_path=tmp_path
-    )
-    print(image)
+    image = create_image(grayscale=False, data_format=data_format, tmp_path=tmp_path)
 
     result = wrapper.predict(image)
     assert "predicted_class" in result
     assert "probabilities" in result
+    print(result)
 
     assert isinstance(result["predicted_class"], int)
     assert isinstance(result["probabilities"], np.ndarray)
+    assert False
     # TODO: Assert that length of probabilities is equal to the number of classes.
+    # TODO: Assert that predicted_class is below the number of classes.
 
 
 def test_raw(wrapper):
