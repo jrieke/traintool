@@ -1,7 +1,6 @@
-import comet_ml
+import comet_ml  # noqa: F401
 import pytest
 import numpy as np
-from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier
 from tensorboardX import SummaryWriter
 

@@ -14,9 +14,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
 from sklearn.utils import shuffle
 import joblib
-from typing import Type, Union, Tuple
 import numpy as np
-from pathlib import Path
 
 from ..model_wrapper import ModelWrapper
 from . import data_utils
