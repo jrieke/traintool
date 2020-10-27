@@ -263,7 +263,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def checkpoint_model(trainer):
-            checkpoint_dir = self.out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
+            checkpoint_dir = (
+                self.out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
+            )
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             torch.save(self.model, checkpoint_dir / "model.pt")
 
