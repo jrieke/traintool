@@ -1,8 +1,8 @@
 import numpy as np
 import torch
-from torch.utils.data import Dataset, TensorDataset
+from torch.utils.data import Dataset
 from torchvision import datasets, transforms
-from typing import List, Tuple, Union
+from typing import List, Union
 from pathlib import Path
 from PIL import Image
 
@@ -140,7 +140,7 @@ def to_numpy(
 
 class ImageDataset(Dataset):
     """
-    Generic dataset for images that can deal with PIL images, numpy arrays, 
+    Generic dataset for images that can deal with PIL images, numpy arrays,
     or torch tensors.
     """
 
@@ -297,4 +297,3 @@ def load_image(
         return img_torch.numpy()
     else:
         return img_torch
-

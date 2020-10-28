@@ -1,9 +1,7 @@
-import comet_ml
+import comet_ml  # noqa: F401
 import pytest
-from typing import List
 import numpy as np
 import torch
-from PIL import Image
 
 from conftest import create_dataset, create_image
 

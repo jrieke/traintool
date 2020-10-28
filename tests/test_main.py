@@ -1,6 +1,5 @@
 import comet_ml
 import pytest
-import yaml
 from tensorboardX import SummaryWriter
 
 from conftest import create_dataset
@@ -11,7 +10,7 @@ from traintool.main import (
     load,
     # default_config,
     _resolve_model,
-    _update_config,
+    # _update_config,
     _write_info_file,
     _read_info_file,
     _create_comet_experiment,
@@ -105,7 +104,8 @@ def test_load(tmp_path):
     loaded_model_wrapper = load(tmp_path)
     assert isinstance(loaded_model_wrapper, ModelWrapper)
     assert loaded_model_wrapper.model is not None
-    # TODO: Make some more checks on loaded_model_wrapper, possibly using a dummy wrapper class.
+    # TODO: Make some more checks on loaded_model_wrapper, possibly using a dummy 
+    #   wrapper class.
 
 
 # def test_default_config():

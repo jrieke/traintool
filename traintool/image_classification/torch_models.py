@@ -341,9 +341,10 @@ class TorchImageClassificationWrapper(ModelWrapper):
             # Convert to channels last format (required for transforms.ToPILImage).
             image = image.transpose((1, 2, 0))
 
-            # Set up transform to convert to PIL image, do manipulations, and convert to tensor.
-            # TODO: Converting to PIL and then to tensor is not super efficient, find a better
-            #   method.
+            # Set up transform to convert to PIL image, do manipulations, and convert
+            # to tensor.
+            # TODO: Converting to PIL and then to tensor is not super efficient, find
+            #   a better method.
             transform = data_utils.create_transform(
                 from_numpy=True,
                 resize=256,

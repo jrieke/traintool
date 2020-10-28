@@ -1,13 +1,8 @@
-from pickle import load
-import comet_ml
+import comet_ml  # noqa: F401
 import pytest
 import numpy as np
-import torchvision
-import torch
-from pathlib import Path
 import torch.nn as nn
 from torch import optim
-from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
 from conftest import create_dataset, create_image
@@ -122,7 +117,8 @@ def test_train(data_format, grayscale, tmp_path):
     )
     wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
 
-    # TODO: Test both resnet18 and simple-cnn with a few different configurations of data.
+    # TODO: Test both resnet18 and simple-cnn with a few different configurations of
+    #   data.
     # TODO: Test with and without val/test data.
     # TODO: Check that something was written to writer and experiment.
     wrapper._train(

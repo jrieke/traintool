@@ -1,5 +1,5 @@
 from comet_ml import Experiment
-from typing import List, Dict, Union, Type
+from typing import Union, Type
 from pathlib import Path
 import yaml
 from tensorboardX import SummaryWriter
@@ -67,7 +67,8 @@ def _update_config(default_config: dict, config: dict) -> dict:
     for key, value in config.items():
         if key not in final_config:
             raise ValueError(
-                f"config contains a parameter that is not supported for this model: {key}"
+                "config contains a parameter that is not supported for this model: "
+                f"{key}"
             )
         else:
             final_config[key] = value
@@ -154,7 +155,8 @@ def train(
     # TODO: Disabled for now, so that we can pass parameters more dynamically (e.g. pass
     #   along sklearn model params without specifying them explicitly), think about if
     #   this is still required.
-    # Get default config and fill up with values from config (checking that all keys are correct)
+    # Get default config and fill up with values from config (checking that all keys 
+    # are correct)
     # default_config = model_wrapper_class.default_config(model_name)
     # if config is None:
     #     config = default_config
@@ -298,4 +300,3 @@ def load(name_or_dir: Union[str, Path]) -> ModelWrapper:
 #             "Could not recognize format of train_data and/or test_data. Supported "
 #             "formats: list of numpy arrays, torch dataset"
 #         )
-

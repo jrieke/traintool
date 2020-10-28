@@ -1,6 +1,5 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Union, Type
 from fastapi import FastAPI, Body
 import uvicorn
 import numpy as np
@@ -9,12 +8,12 @@ from abc import ABC, abstractmethod
 
 class ModelWrapper(ABC):
     """
-    A basic wrapper for machine learning models. 
-    
-    This wrapper should contain the model itself and any additional configuration or 
-    resources required to run the model/make predictions. It offers a standard interface 
-    to interact with models regardless of their implementation or framework, e.g. to 
-    save/load a model to file or make a prediction. 
+    A basic wrapper for machine learning models.
+
+    This wrapper should contain the model itself and any additional configuration or
+    resources required to run the model/make predictions. It offers a standard interface
+    to interact with models regardless of their implementation or framework, e.g. to
+    save/load a model to file or make a prediction.
     """
 
     def __init__(self, model_name: str, config: dict, out_dir: Path) -> None:
@@ -131,4 +130,3 @@ class ModelWrapper(ABC):
 #         probabilites = self.predict(data, config)
 #         predicted_class = probabilities.argmax()
 #         return predicted_class, probabilities
-

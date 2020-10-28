@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-import torchvision
 import torch
 from torch.utils.data import TensorDataset
 from typing import Union, List
@@ -10,6 +9,7 @@ import imageio
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 # TODO: Maybe build generator around this which returns all the possible data formats
 #   that are allowed.
@@ -36,7 +36,8 @@ def create_dataset(
         seed (int, optional): Seed for data generation. Defaults to 0.
 
     Returns:
-        Union[List[np.ndarray], torch.utils.data.Dataset, Path]: The generated fake data. 
+        Union[List[np.ndarray], torch.utils.data.Dataset, Path]: The generated fake 
+            data. 
     """
 
     # Create raw data (seeded, so always the same data).
