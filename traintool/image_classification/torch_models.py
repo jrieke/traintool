@@ -8,6 +8,7 @@ import torchvision
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
 import warnings
+import numpy as np
 
 # from loguru import logger
 
@@ -108,9 +109,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
             # Warn if num_classes not given for not-pretrained model (this may be
             # unintentional!).
-            if pretrained and "num_classes" not in self.config: 
-                warnings.warn("Config parameter num_classes not set. Note that the "
-                              "model will by default use 1000 classes, as in ImageNet.")
+            if pretrained and "num_classes" not in self.config:
+                warnings.warn(
+                    "Config parameter num_classes not set. Note that the "
+                    "model will by default use 1000 classes, as in ImageNet."
+                )
 
             # Raise error if pretrained model doesn't have 1000 classes.
             if pretrained and num_classes != 1000:
@@ -307,14 +310,58 @@ class TorchImageClassificationWrapper(ModelWrapper):
         """Loads the model from file."""
         self.model = torch.load(self.out_dir / "model.pt")
 
-    def predict(self, data) -> dict:
+    def predict(self, image) -> dict:
         """Runs data through the model and returns output."""
-        # TODO: Mabe raise error if self.model is None.
+
+        # Convert data format if required.
+        image_format = data_utils.recognize_image_format(image)
+        if image_format == "files":
+            image = data_utils.load_image(
+                image,
+                to_numpy=False,
+                resize=256,
+                crop=224,
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            )
+        elif image_format == "numpy":
+            # TODO: This is almost the same code as in data_utils.numpy_to_torch,
+            #   maybe refactor it.
+
+            # Rescale images to 0-255 and convert to uint8.
+            # TODO: This should probably be done with the same min/max values as train
+            #   set, see note in data_utils.numpy_to_torch.
+            image = (image - np.min(image)) / np.ptp(image) * 255
+            image = image.astype(np.uint8)
+
+            # If images are grayscale, convert to RGB by duplicating channels.
+            if image.shape[0] == 1:
+                image = np.stack((image[0],) * 3, axis=0)
+
+            # Convert to channels last format (required for transforms.ToPILImage).
+            image = image.transpose((1, 2, 0))
+
+            # Set up transform to convert to PIL image, do manipulations, and convert to tensor.
+            # TODO: Converting to PIL and then to tensor is not super efficient, find a better
+            #   method.
+            transform = data_utils.create_transform(
+                from_numpy=True,
+                resize=256,
+                crop=224,
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            )
+            image = transform(image)
+        else:
+            raise RuntimeError()
+
+        # Wrap image in batch.
+        image_batch = image.unsqueeze(dim=0)
+
         self.model.eval()
         with torch.no_grad():
-            inp = torch.from_numpy(data).float().unsqueeze(dim=0)
-            output = self.model(inp)[0]
-            probabilities = torch.softmax(output, dim=0).numpy().tolist()
+            output = self.model(image_batch)[0]
+            probabilities = torch.softmax(output, dim=0).numpy()
             predicted_class = output.argmax().item()
         return {"predicted_class": predicted_class, "probabilities": probabilities}
 

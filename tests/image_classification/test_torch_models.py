@@ -10,7 +10,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
-from conftest import create_dataset
+from conftest import create_dataset, create_image
 
 from traintool.image_classification.torch_models import (
     TorchImageClassificationWrapper,
@@ -23,9 +23,7 @@ from traintool.utils import DummyExperiment
 @pytest.fixture
 def wrapper(tmp_path):
     """A simple wrapper around random-forest model"""
-    data = create_dataset(
-        data_format="numpy", grayscale=False, size=224
-    )
+    data = create_dataset(data_format="numpy", grayscale=False, size=224)
     wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
     wrapper._train(
         train_data=data,
@@ -147,12 +145,20 @@ def test_load(wrapper):
     # TODO: Maybe do some more tests here.
 
 
-# TOOD: Enable this once the preprocessing is done properly.
-# def test_predict(wrapper):
-#     data = create_dataset(grayscale=True)
-#     result = wrapper.predict(data[0][0:1])
-#     assert "predicted_class" in result
-#     assert "probabilities" in result
+@pytest.mark.parametrize("data_format", ["numpy", "files"])
+def test_predict(wrapper, data_format, tmp_path):
+    image = create_image(grayscale=False, data_format=data_format, tmp_path=tmp_path)
+
+    result = wrapper.predict(image)
+    assert "predicted_class" in result
+    assert "probabilities" in result
+    print(result)
+
+    assert isinstance(result["predicted_class"], int)
+    assert isinstance(result["probabilities"], np.ndarray)
+    assert result["probabilities"].ndim == 1
+    # TODO: Assert that length of probabilities is equal to the number of classes.
+    # TODO: Assert that predicted_class is below the number of classes.
 
 
 def test_raw(wrapper):

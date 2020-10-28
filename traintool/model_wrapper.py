@@ -47,7 +47,7 @@ class ModelWrapper(ABC):
 
     # TODO: Maybe check in predict, raw, and deploy that model was trained or loaded.
     @abstractmethod
-    def predict(self, data) -> dict:
+    def predict(self, image) -> dict:
         """Runs data through the model and returns output."""
         pass
 

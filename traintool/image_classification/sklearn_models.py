@@ -143,11 +143,12 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         self.model = joblib.load(self.out_dir / "model.joblib")
         self.scaler = joblib.load(self.out_dir / "scaler.joblib")
 
-    def predict(self, image):
+    def predict(self, image) -> dict:
         """Runs data through the model and returns output."""
         # TODO: This deals with single image right now, maybe extend for batch.
 
         # Convert data format if required.
+        # TODO: Maybe refactor this with the code in torch_models.predict.
         image_format = data_utils.recognize_image_format(image)
         if image_format == "files":
             # TODO: If the network was trained with numpy images,
@@ -155,7 +156,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             #   grayscale.
             image = data_utils.load_image(image, to_numpy=True, resize=28, crop=28)
         elif image_format == "numpy":
-            pass
+            pass  # no conversion
         else:
             raise RuntimeError()
 

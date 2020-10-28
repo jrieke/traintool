@@ -78,6 +78,7 @@ def test_predict(wrapper, data_format, tmp_path):
 
     assert isinstance(result["predicted_class"], int)
     assert isinstance(result["probabilities"], np.ndarray)
+    assert result["probabilities"].ndim == 1
     # TODO: Assert that length of probabilities is equal to the number of classes.
     # TODO: Assert that predicted_class is below the number of classes.
 
