@@ -39,11 +39,21 @@ def wrapper(tmp_path):
 
 
 def test_create_model(tmp_path):
+
+    # resnet18
     wrapper = TorchImageClassificationWrapper("resnet18", {}, tmp_path)
     wrapper._create_model()
     assert isinstance(wrapper.model, nn.Module)
+    assert wrapper.model.fc.out_features == 1000
     # pretrained=True is not tested here because it takes too long
 
+    # resnet18 with custom num_classes
+    wrapper = TorchImageClassificationWrapper("resnet18", {"num_classes": 10}, tmp_path)
+    wrapper._create_model()
+    assert isinstance(wrapper.model, nn.Module)
+    assert wrapper.model.fc.out_features == 10
+
+    # simple-cnn
     wrapper = TorchImageClassificationWrapper("simple-cnn", {}, tmp_path)
     wrapper._create_model()
     assert isinstance(wrapper.model, SimpleCnn)

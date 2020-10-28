@@ -1,18 +1,13 @@
-import comet_ml
+import comet_ml  # noqa: F401
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from pathlib import Path
 import torchvision
-from torch.optim.lr_scheduler import StepLR
-from typing import Union
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
-import imgaug.augmenters as iaa
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+import warnings
 
 # from loguru import logger
 
@@ -20,50 +15,51 @@ from ..model_wrapper import ModelWrapper
 from . import data_utils
 from .. import utils
 
-
-torchvision_models = [
-    "alexnet",
-    "vgg11",
-    "vgg11_bn",
-    "vgg13",
-    "vgg13_bn",
-    "vgg16",
-    "vgg16_bn",
-    "vgg19",
-    "vgg19_bn",
-    "resnet18",
-    "resnet34",
-    "resnet50",
-    "resnet101",
-    "resnet152",
-    "squeezenet1_0",
-    "squeezenet1_1",
-    "densenet121",
-    "densenet169",
-    "densenet161",
-    "densenet201",
-    "inception_v3",
-    "googlenet",
-    "shufflenet_v2_x0_5",
-    "shufflenet_v2_x1_0",
-    "shufflenet_v2_x1_5",
-    "shufflenet_v2_x2_0",
-    "mobilenet_v2",
-    "resnext50_32x4d",
-    "resnext101_32x8d",
-    "wide_resnet50_2",
-    "wide_resnet101_2",
-    "mnasnet0_5",
-    "mnasnet0_75",
-    "mnasnet1_0",
-    "mnasnet1_3",
-]
+# TODO: This isn't actually used anymore. See if we still need it at some point or it
+#   can be deleted.
+# torchvision_models = [
+#     "alexnet",
+#     "vgg11",
+#     "vgg11_bn",
+#     "vgg13",
+#     "vgg13_bn",
+#     "vgg16",
+#     "vgg16_bn",
+#     "vgg19",
+#     "vgg19_bn",
+#     "resnet18",
+#     "resnet34",
+#     "resnet50",
+#     "resnet101",
+#     "resnet152",
+#     "squeezenet1_0",
+#     "squeezenet1_1",
+#     "densenet121",
+#     "densenet169",
+#     "densenet161",
+#     "densenet201",
+#     "inception_v3",
+#     "googlenet",
+#     "shufflenet_v2_x0_5",
+#     "shufflenet_v2_x1_0",
+#     "shufflenet_v2_x1_5",
+#     "shufflenet_v2_x2_0",
+#     "mobilenet_v2",
+#     "resnext50_32x4d",
+#     "resnext101_32x8d",
+#     "wide_resnet50_2",
+#     "wide_resnet101_2",
+#     "mnasnet0_5",
+#     "mnasnet0_75",
+#     "mnasnet1_0",
+#     "mnasnet1_3",
+# ]
 
 
 class SimpleCnn(nn.Module):
     """
     A simple CNN module for MNIST, similar to pytorch's MNIST example.
-    
+
     See: https://github.com/pytorch/examples/blob/master/mnist/main.py
     """
 
@@ -96,7 +92,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
     """
     This wrapper handles torch models for image classification.
 
-    It can either support models from torchvision.models (resnet18, alexnet, ...) or a 
+    It can either support models from torchvision.models (resnet18, alexnet, ...) or a
     simple CNN for MNIST (simple-cnn, see SimpleCnn class).
     """
 
@@ -105,9 +101,27 @@ class TorchImageClassificationWrapper(ModelWrapper):
         if self.model_name == "simple-cnn":
             self.model = SimpleCnn()
         else:
+            # TODO: Figure out num_classes based on dataset (possible at least for
+            #   numpy array and files), similar to sklearn.
+            num_classes = self.config.get("num_classes", 1000)
             pretrained = self.config.get("pretrained", False)
+
+            # Warn if num_classes not given for not-pretrained model (this may be
+            # unintentional!).
+            if pretrained and "num_classes" not in self.config: 
+                warnings.warn("Config parameter num_classes not set. Note that the "
+                              "model will by default use 1000 classes, as in ImageNet.")
+
+            # Raise error if pretrained model doesn't have 1000 classes.
+            if pretrained and num_classes != 1000:
+                raise ValueError(
+                    "Using a pretrained model requires config parameter num_classes "
+                    f"to be 1000, is: {num_classes}"
+                )
+
+            # Create model.
             self.model = getattr(torchvision.models, self.model_name)(
-                pretrained=pretrained
+                pretrained=pretrained, num_classes=num_classes
             )
 
     def _create_optimizer(self) -> optim.Optimizer:
@@ -160,6 +174,10 @@ class TorchImageClassificationWrapper(ModelWrapper):
         use_cuda = torch.cuda.is_available()
 
         # Preprocess all datasets.
+        # TODO: mean and std normalization applies only to pretrained models. But
+        #   doesn't this also make sense for not-pretrained? Or should I scale to mean
+        #   0 and std 1 here? See also the code here:
+        #   https://pytorch.org/docs/stable/torchvision/models.html
         train_data = data_utils.to_torch(
             train_data,
             resize=256,
@@ -212,7 +230,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
         def log_training_loss(trainer):
             batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
             print(
-                f"Epoch {trainer.state.epoch}, batch {batch} / {trainer.state.epoch_length}: Loss: {trainer.state.output:.3f}"
+                f"Epoch {trainer.state.epoch}, "
+                f"batch {batch} / {trainer.state.epoch_length}: "
+                f"Loss: {trainer.state.output:.3f}"
             )
 
         # TODO: This iterates over complete train set again, maybe accumulate as in the
@@ -222,7 +242,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
             evaluator.run(train_loader)
             metrics = evaluator.state.metrics
             print(
-                f"Training results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+                f"Training results - Epoch: {trainer.state.epoch}  "
+                f"Avg accuracy: {metrics['accuracy']:.3f} "
+                f"Avg loss: {metrics['loss']:.3f}"
             )
             experiment.log_metric("train_loss", metrics["loss"])
             experiment.log_metric("train_accuracy", metrics["accuracy"])
@@ -237,7 +259,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 evaluator.run(val_loader)
                 metrics = evaluator.state.metrics
                 print(
-                    f"Validation results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+                    f"Validation results - Epoch: {trainer.state.epoch} "
+                    f"Avg accuracy: {metrics['accuracy']:.3f} "
+                    f"Avg loss: {metrics['loss']:.3f}"
                 )
                 experiment.log_metric("val_loss", metrics["loss"])
                 experiment.log_metric("val_accuracy", metrics["accuracy"])
@@ -252,7 +276,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 evaluator.run(test_loader)
                 metrics = evaluator.state.metrics
                 print(
-                    f"Test results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.3f} Avg loss: {metrics['loss']:.3f}"
+                    f"Test results - Epoch: {trainer.state.epoch} "
+                    f"Avg accuracy: {metrics['accuracy']:.3f} "
+                    f"Avg loss: {metrics['loss']:.3f}"
                 )
                 experiment.log_metric("test_loss", metrics["loss"])
                 experiment.log_metric("test_accuracy", metrics["accuracy"])
