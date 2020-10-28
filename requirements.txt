@@ -1,7 +1,7 @@
+numpy
 torch
 torchvision
 pytorch-ignite
-numpy
 comet_ml
 pyyaml
 scikit-learn
@@ -10,4 +10,3 @@ uvicorn
 joblib
 tensorboardX
 tensorboard
-imgaug
