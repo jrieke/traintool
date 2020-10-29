@@ -11,3 +11,4 @@ uvicorn
 joblib
 tensorboardX
 tensorboard
+imageio
