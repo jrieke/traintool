@@ -1,7 +1,7 @@
 -f https://download.pytorch.org/whl/torch_stable.html
 numpy
-torch
-torchvision
+torch==1.7.0+cpu
+torchvision==0.8.1+cpu
 pytorch-ignite
 comet_ml
 pyyaml
