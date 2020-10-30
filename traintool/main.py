@@ -182,7 +182,7 @@ def train(
             out_dir = Path(tmp_dir)
         else:  # use save as dir
             out_dir = Path(save)
-            out_dir.mkdir(parents=True, exist_ok=False)
+            out_dir.mkdir(parents=True, exist_ok=True)
         _write_info_file(out_dir, model_name=model_name, config=config)
 
         # Create model wrapper based on model_name (checking that model_name is valid)
