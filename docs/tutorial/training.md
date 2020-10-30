@@ -104,7 +104,7 @@ long-running processes, so you don't lose the whole progress in case your machin
 interrupted:
 
 ```python
-model = traintool.train("...", out_dir="path/to/dir")
+model = traintool.train("...", save="path/to/dir")
 ```
 
 In both cases, loading a model works via:

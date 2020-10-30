@@ -1,4 +1,4 @@
-import comet_ml
+import comet_ml  # noqa: F401
 import sys
 import os
 import numpy as np

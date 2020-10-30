@@ -126,8 +126,7 @@ def train(
     val_data=None,
     test_data=None,
     config: dict = None,
-    save: bool = True,
-    out_dir: Union[Path, str] = None,
+    save: Union[bool, str, Path] = True,
     dry_run: bool = False,
 ) -> ModelWrapper:
     """
@@ -142,11 +141,11 @@ def train(
             Defaults to None.
         config (dict, optional): Configuration of hyperparameters. If None (default), 
             some default hyperparameters for each model are used.
-        save (bool, optional): Whether the model, logs and tensorboard metrics will be 
-            saved to disk and (if connected) to comet_ml. Defaults to True.
-        out_dir (Union[Path, str], optional): The directory where to store the model and 
-            logs. If None (default), a timestamped directory is automatically created in 
-            ./traintool-experiments.
+        save (Union[bool, str, Path], optional): Whether to store model and logs to disk
+            (and to comet.ml if connected). If False, nothing will be saved. If True, 
+            artefacts will be saved to a timestamped directory in 
+            ./traintool-experiments. If a directory (str or Path) is given, artefacts 
+            will be saved there. Defaults to True. 
         dry_run (bool, optional): If True, the model will only be trained for one batch 
             to check that everything works. This will still save the model to 
             disk; use save=False to prevent this. Defaults to False.
@@ -173,17 +172,17 @@ def train(
 
         # Create out_dir and file with some general information.
         experiment_name = f"{utils.timestamp()}_{model_name}"
-        if save:
-            if out_dir is None:
-                out_dir = project_dir / experiment_name
-                out_dir.mkdir(parents=True, exist_ok=False)
-            else:
-                out_dir = Path(out_dir)
-        else:
+        if save is True:  # timestamped dir in ./traintool-experiments
+            out_dir = project_dir / experiment_name
+            out_dir.mkdir(parents=True, exist_ok=False)
+        elif save is False:  # temporary dir
             # TODO: For convenience, we are just making out_dir a temporary directory
             #   here, which will be discarded. Instead, we shouldn't save anything at
             #   all because it might be more performant.
             out_dir = Path(tmp_dir)
+        else:  # use save as dir
+            out_dir = Path(save)
+            out_dir.mkdir(parents=True, exist_ok=False)
         _write_info_file(out_dir, model_name=model_name, config=config)
 
         # Create model wrapper based on model_name (checking that model_name is valid)

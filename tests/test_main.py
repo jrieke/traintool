@@ -84,7 +84,6 @@ def test_train(tmp_path):
         "random-forest",
         train_data=train_data,
         dry_run=True,
-        out_dir=tmp_path,
         save=False,
     )
     assert isinstance(model_wrapper, ModelWrapper)
@@ -97,7 +96,7 @@ def test_train(tmp_path):
         val_data=train_data,
         test_data=train_data,
         dry_run=True,
-        out_dir=tmp_path,
+        save=tmp_path,
     )
     assert isinstance(model_wrapper, ModelWrapper)
     assert (tmp_path / "info.yml").exists()
@@ -108,7 +107,7 @@ def test_train(tmp_path):
         "random-forest",
         train_data=train_data,
         dry_run=True,
-        out_dir=tmp_path,
+        save=tmp_path,
     )
     assert isinstance(model_wrapper, ModelWrapper)
     assert (tmp_path / "info.yml").exists()
@@ -122,7 +121,7 @@ def test_load(tmp_path):
         train_data=train_data,
         test_data=train_data,
         dry_run=True,
-        out_dir=tmp_path,
+        save=tmp_path,
     )
     loaded_model_wrapper = load(tmp_path)
     assert isinstance(loaded_model_wrapper, ModelWrapper)
