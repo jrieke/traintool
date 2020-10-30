@@ -3,6 +3,7 @@ from typing import Union, Type
 from pathlib import Path
 import yaml
 from tensorboardX import SummaryWriter
+import tempfile
 
 from . import utils
 from . import image_classification
@@ -125,8 +126,8 @@ def train(
     val_data=None,
     test_data=None,
     config: dict = None,
+    save: bool = True,
     out_dir: Union[Path, str] = None,
-    tensorboard: bool = True,
     dry_run: bool = False,
 ) -> ModelWrapper:
     """
@@ -141,12 +142,15 @@ def train(
             Defaults to None.
         config (dict, optional): Configuration of hyperparameters. If None (default), 
             some default hyperparameters for each model are used.
+        save (bool, optional): If True (default), the model, logs and tensorboard 
+            metrics will be saved to disk. 
         out_dir (Union[Path, str], optional): The directory where to store the model and 
-            logs. If None (default), will be automatically created in the project dir.
-        tensorboard (bool, optional): If True (default), log metrics locally for use in 
-            tensorboard.
-        dry_run (bool, optional): If True, sets up everything but doesn't train the 
-            model. Defaults to False.
+            logs. If None (default), a timestamped directory is automatically created in 
+            ./traintool-experiments.
+        dry_run (bool, optional): If True, the model will only be trained for one batch 
+            to check that everything works. This will still save the model and logs to 
+            disk, so you can check it; use save=False to prevent this. Defaults to 
+            False.
         
     Returns:
         ModelWrapper: A wrapper around the original model
@@ -163,83 +167,90 @@ def train(
     # else:
     #     config = _update_config(default_config, config)
     
-    # TODO: Create empty config dict here or in model wrappers?
-    if config is None:
-        config = {}
+    with tempfile.TemporaryDirectory() as tmp_dir:  # only used when save=True
         
-    # Create out_dir in ~/traintool and file with some general information
-    experiment_name = f"{utils.timestamp()}_{model_name}"
-    if out_dir is None:
-        out_dir = project_dir / experiment_name
-        out_dir.mkdir(parents=True, exist_ok=False)
-    else:
-        out_dir = Path(out_dir)
-    _write_info_file(out_dir, model_name=model_name, config=config)
+        if config is None:
+            config = {}
+            
+        # Create out_dir and file with some general information.
+        experiment_name = f"{utils.timestamp()}_{model_name}"
+        if save:
+            if out_dir is None:
+                out_dir = project_dir / experiment_name
+                out_dir.mkdir(parents=True, exist_ok=False)
+            else:
+                out_dir = Path(out_dir)
+        else:
+            # TODO: For convenience, we are just making out_dir a temporary directory 
+            #   here, which will be discarded. Instead, we shouldn't save anything at 
+            #   all because it might be more performant.
+            out_dir = Path(tmp_dir)
+        _write_info_file(out_dir, model_name=model_name, config=config)
 
-    # Create model wrapper based on model_name (checking that model_name is valid)
-    model_wrapper_class = _resolve_model(model_name)
-    model_wrapper = model_wrapper_class(model_name, config, out_dir)
+        # Create model wrapper based on model_name (checking that model_name is valid)
+        model_wrapper_class = _resolve_model(model_name)
+        model_wrapper = model_wrapper_class(model_name, config, out_dir)
 
-    # Check that train_data, val_data and test_data have correct format
-    # TODO: Do this here or in model files?
+        # Print some info
+        # print("=" * 29, "traintool experiment", "=" * 29)
+        print("  traintool experiment  ".center(80, "="))
+        print("Name:".ljust(15), experiment_name)
+        print("Model name:".ljust(15), model_name)
+        print("Configuration:".ljust(15), config)
+        print("Output dir:".ljust(15), out_dir)
+        if "api_key" in comet_config:
+            print(
+                "Logging to comet.ml",
+                f"(project: {comet_config['project_name']})"
+                if comet_config["project_name"] is not None
+                else "",
+            )
+        print("=" * 80)
+        if dry_run:
+            print(">>> THIS IS JUST A DRY RUN <<<")
+            print()
 
-    # Print some info
-    # print("=" * 29, "traintool experiment", "=" * 29)
-    print("  traintool experiment  ".center(80, "="))
-    print("Name:".ljust(15), experiment_name)
-    print("Model name:".ljust(15), model_name)
-    print("Configuration:".ljust(15), config)
-    print("Output dir:".ljust(15), out_dir)
-    if "api_key" in comet_config:
-        print(
-            "Logging to comet.ml",
-            f"(project: {comet_config['project_name']})"
-            if comet_config["project_name"] is not None
-            else "",
+        # Create tensorboard writer
+        writer = _create_tensorboard_writer(out_dir=out_dir)
+
+        # Create comet.ml experiment (or dummy object if comet is not used).
+        # This has to be done right before training because it prints some stuff.
+        # TODO: Right now, this still saves when save=False and/or dry_run=True. How 
+        #   should we handle this?
+        experiment = _create_comet_experiment(config=config)  # , dry_run=dry_run)
+
+        # Start training the model
+        model_wrapper._train(
+            train_data=train_data,
+            val_data=val_data,
+            test_data=test_data,
+            writer=writer,
+            experiment=experiment,
+            dry_run=dry_run,
         )
-    print("=" * 80)
-    if dry_run:
-        print(">>> THIS IS JUST A DRY RUN <<<")
+
+        # End experiment
+        experiment.end()
+        writer.close()
         print()
+        print("=" * 80)
+        print()
+        print("Finished!")
 
-    # Create tensorboard writer
-    writer = _create_tensorboard_writer(out_dir=out_dir, write_to_disk=tensorboard)
+        # Add end time and run time to out_dir / info.yml
+        # TODO
 
-    # Create comet.ml experiment (or dummy object if comet is not used).
-    # This has to be done right before training because it prints some stuff.
-    experiment = _create_comet_experiment(config=config, dry_run=dry_run)
-
-    # Start training the model
-    model_wrapper._train(
-        train_data=train_data,
-        val_data=val_data,
-        test_data=test_data,
-        writer=writer,
-        experiment=experiment,
-        dry_run=dry_run,
-    )
-
-    # End experiment
-    experiment.end()
-    writer.close()
-    print()
-    print("=" * 80)
-    print()
-    print("Finished!")
-
-    # Add end time and run time to out_dir / info.yml
-    # TODO
-
-    return model_wrapper
+        return model_wrapper
 
 
 def load(name_or_dir: Union[str, Path]) -> ModelWrapper:
     """
-    Load a model that was previously trained.
+    Load a model that was trained previously.
 
     Args:
-        name_or_dir (Union[str, Path]): The name of the experiment (if it's stored  
-            under ./ or ./traintool-experiments/), or the path of the output dir.
+        name_or_dir (Union[str, Path]): The name of the experiment (will search for 
+            model files in ./{name} and ./traintool-experiments/{name}) or the complete 
+            path to the output directory.
 
     Returns:
         ModelWrapper: The loaded model

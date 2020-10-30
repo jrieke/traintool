@@ -1,3 +1,4 @@
+import comet_ml
 import sys
 import os
 import numpy as np

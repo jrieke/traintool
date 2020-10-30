@@ -79,11 +79,34 @@ def test_train(tmp_path):
     # with pytest.raises(ValueError):
     #     train("random-forest", None, config={"non-existing-parameter": 123})
 
-    # TODO: Gives error if test_data is None.
+    # With save=False (this has to be checked first, so tmp_path is still empty)
     model_wrapper = train(
         "random-forest",
         train_data=train_data,
+        dry_run=True,
+        out_dir=tmp_path,
+        save=False,
+    )
+    assert isinstance(model_wrapper, ModelWrapper)
+    assert not any(tmp_path.iterdir())  # is empty dir
+
+    # With all datasets
+    model_wrapper = train(
+        "random-forest",
+        train_data=train_data,
+        val_data=train_data,
         test_data=train_data,
+        dry_run=True,
+        out_dir=tmp_path,
+    )
+    assert isinstance(model_wrapper, ModelWrapper)
+    assert (tmp_path / "info.yml").exists()
+    assert (tmp_path / "model.joblib").exists()
+    
+    # With only train data
+    model_wrapper = train(
+        "random-forest",
+        train_data=train_data,
         dry_run=True,
         out_dir=tmp_path,
     )
