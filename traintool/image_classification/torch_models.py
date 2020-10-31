@@ -97,25 +97,13 @@ class TorchImageClassificationWrapper(ModelWrapper):
     simple CNN for MNIST (simple-cnn, see SimpleCnn class).
     """
 
-    def _create_model(self) -> None:
+    def _create_model(self, num_classes) -> None:
         """Create the model based on self.model_name and store it in self.model."""
         if self.model_name == "simple-cnn":
             self.model = SimpleCnn()
         else:
-            # TODO: Figure out num_classes based on dataset (possible at least for
-            #   numpy array and files), similar to sklearn.
-            num_classes = self.config.get("num_classes", 1000)
-            pretrained = self.config.get("pretrained", False)
-
-            # Warn if num_classes not given for not-pretrained model (this may be
-            # unintentional!).
-            if pretrained and "num_classes" not in self.config:
-                warnings.warn(
-                    "Config parameter num_classes not set. Note that the "
-                    "model will by default use 1000 classes, as in ImageNet."
-                )
-
             # Raise error if pretrained model doesn't have 1000 classes.
+            pretrained = self.config.get("pretrained", False)
             if pretrained and num_classes != 1000:
                 raise ValueError(
                     "Using a pretrained model requires config parameter num_classes "
@@ -175,6 +163,12 @@ class TorchImageClassificationWrapper(ModelWrapper):
     ) -> None:
 
         use_cuda = torch.cuda.is_available()
+        
+        # Get number of classes from config or infer from train_data.
+        if "num_classes" in self.config:
+            num_classes = self.config["num_classes"]
+        else:
+            num_classes = data_utils.get_num_classes(train_data)
 
         # Preprocess all datasets.
         # TODO: mean and std normalization applies only to pretrained models. But
@@ -214,7 +208,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         # Set up model, optimizer, loss.
         device = torch.device("cuda" if use_cuda else "cpu")
-        self._create_model()
+        self._create_model(num_classes)
         optimizer = self._create_optimizer()
         loss_func = nn.CrossEntropyLoss()
 
