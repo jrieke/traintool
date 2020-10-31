@@ -19,6 +19,7 @@ def create_dataset(
     size: int = 28,
     grayscale: bool = True,
     num_samples: int = 4,
+    num_classes: int = 4,
     seed: int = 0,
     tmp_path: Path = None,
 ) -> Union[List[np.ndarray], TensorDataset, Path]:
@@ -40,14 +41,23 @@ def create_dataset(
         Union[List[np.ndarray], torch.utils.data.Dataset, Path]: The generated fake 
             data. 
     """
+    
+    if num_samples < num_classes:
+        raise ValueError("num_samples needs to be >= num_classes, so that each label "
+                         "can appear at least once")
 
-    # Create raw data (seeded, so always the same data).
+    # Seed to make different datasets comparable.
     np.random.seed(seed)
+    
+    # Create images in channels first format.
     num_channels = 1 if grayscale else 3
-    # Images are in channels first format.
     images = np.random.rand(num_samples, num_channels, size, size)
-    labels = np.random.randint(10, size=num_samples)
-
+    
+    # Create random labels. Make sure all labels appear at least once by setting the 
+    # first few ones semi-random.
+    labels = np.random.randint(num_classes, size=num_samples)
+    labels[:num_classes] = np.random.permutation(num_classes)
+    
     # Convert to correct output format.
     if data_format == "numpy":
         return [images, labels]
