@@ -297,3 +297,20 @@ def load_image(
         return img_torch.numpy()
     else:
         return img_torch
+
+
+def get_num_classes(data) -> int:
+    """Returns the number of classes (unique labels) in the dataset."""
+    data_format = recognize_data_format(data)
+    if data_format == "numpy":
+        images, labels = data
+        # TODO: Right now, we just assume that the labels are properly indexed (e.g. 
+        #   from 0 to 9), so we return the max value + 1 here. Instead, we should map 
+        #   the labels to a dictionary and then figure out the number of classes from 
+        #   there. E.g. so that labels can be [0, 2, 5] or even ["dog", "cat", "horse"].
+        return np.max(labels) + 1
+    elif data_format == "files":
+        dataset = datasets.ImageFolder(data)
+        return len(dataset.targets)
+    else:
+        RuntimeError()

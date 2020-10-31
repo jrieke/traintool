@@ -13,6 +13,7 @@ from traintool.image_classification.data_utils import (
     files_to_torch,
     load_image,
     recognize_image_format,
+    get_num_classes,
 )
 
 
@@ -137,3 +138,8 @@ def test_load_image(tmp_path):
     img = load_image(image_path, resize=50, crop=40, to_numpy=True)
     assert isinstance(img, np.ndarray)
     assert img.shape == (3, 40, 40)
+
+
+def test_get_num_classes(numpy_data, files_data):
+    assert get_num_classes(numpy_data) == 4
+    assert get_num_classes(files_data) == 4
