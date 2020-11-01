@@ -7,11 +7,16 @@ import tempfile
 import editdistance
 import numpy as np
 from datetime import datetime
+from loguru import logger
+import sys
 
 from . import utils
 from . import image_classification
 from .model_wrapper import ModelWrapper
 
+# Configure default logger so that it's equal to print.
+logger.remove()
+logger.add(sys.stderr, format="{message}", level="INFO")
 
 comet_config = {}
 # TODO: Add a method to change the project dir.
@@ -98,7 +103,6 @@ def _write_info_file(out_dir: Path, **kwargs) -> None:
     Create a yaml file info.yml in out_dir that contains kwargs. 
     If the file already exists, it will be updated.
     """
-    print(kwargs)
     if (out_dir / "info.yml").exists():
         info = _read_info_file(out_dir)
         info.update(kwargs)
@@ -205,7 +209,7 @@ def train(
         # invalid).
         model_wrapper_class = _resolve_model(model_name)
 
-        # Create out_dir and write file with some general information.
+        # Create out_dir.
         experiment_id = f"{start_time.strftime('%Y-%m-%d_%H-%M-%S')}_{model_name}"
         if save is True:  # timestamped dir in ./traintool-experiments
             out_dir = project_dir / experiment_id
@@ -218,6 +222,8 @@ def train(
         else:  # use save as dir
             out_dir = Path(save)
             out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create yml file in out_dir with some information about the experiment.
         _write_info_file(
             out_dir,
             status="Running",
@@ -226,26 +232,36 @@ def train(
             start_time=str(start_time),
         )
 
-        # Print some info
-        print("  traintool experiment  ".center(80, "="))
-        print("ID:".ljust(12), experiment_id)
-        print("Model:".ljust(12), model_name)
-        print("Config:".ljust(12), config)
-        print("Output dir:".ljust(12), out_dir)
+        # Stream stdout to log file in out_dir.
+        logger.add(
+            out_dir / "stdout.log",
+            format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {message}",
+            backtrace=True,
+            diagnose=True,
+        )
+
+        # Print some info.
+        logger.info("  traintool experiment  ".center(80, "="))
+        logger.info("ID:".ljust(12) + str(experiment_id))
+        logger.info("Model:".ljust(12) + str(model_name))
+        logger.info("Config:".ljust(12) + str(config))
+        logger.info("Output dir:".ljust(12) + str(out_dir))
         if save is False:
-            print(" " * 12, "(temporary directory, will be automatically removed)")
-        if "api_key" in comet_config:
-            print(
-                "Logging to comet.ml",
-                f"(project: {comet_config['project_name']})"
-                if comet_config["project_name"] is not None
-                else "",
+            logger.info(
+                " " * 12 + "(temporary directory, will be automatically removed)"
             )
-        print("Load via:".ljust(12), f'traintool.load("{experiment_id}")')
-        print("=" * 80)
+        if "api_key" in comet_config:
+            if comet_config["project_name"] is None:
+                project = "Uncategorized Experiments"
+            else:
+                project = comet_config["project_name"]
+            logger.info("Comet.ml:".ljust(12) + f"Enabled (project: {project})")
+        if save is not False:
+            logger.info("Load via:".ljust(12) + f'traintool.load("{experiment_id}")')
+        logger.info("=" * 80)
         if dry_run:
-            print(">>> THIS IS JUST A DRY RUN <<<")
-            print()
+            logger.info(">>> THIS IS JUST A DRY RUN <<<")
+            logger.info("")
 
         # Create tensorboard writer
         writer = _create_tensorboard_writer(out_dir=out_dir)
@@ -280,7 +296,7 @@ def train(
             _write_info_file(
                 out_dir, status=status, end_time=str(end_time), duration=str(duration)
             )
-            print(
+            logger.info(
                 f"  {status}! (after {utils.format_timedelta(duration)})  ".center(
                     80, "="
                 )

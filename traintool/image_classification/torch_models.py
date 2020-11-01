@@ -8,8 +8,7 @@ import torchvision
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
 import numpy as np
-
-# from loguru import logger
+from loguru import logger
 
 from ..model_wrapper import ModelWrapper
 from . import data_utils
@@ -163,7 +162,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         use_cuda = torch.cuda.is_available()
 
-        print("Preprocessing datasets...")
+        logger.info("Preprocessing datasets...")
         # Get number of classes from config or infer from train_data.
         if "num_classes" in self.config:
             num_classes = self.config["num_classes"]
@@ -197,15 +196,13 @@ class TorchImageClassificationWrapper(ModelWrapper):
             std=[0.229, 0.224, 0.225],
         )
         # TODO: Maybe print some more stuff about the data.
-        print(f"Train data: {len(train_data)} samples")
-        print(
-            "Val data:  ", None if val_data is None else f"{len(val_data)} samples",
-        )
-        print(
-            "Test data: ", None if test_data is None else f"{len(test_data)} samples",
-        )
-        print("Found", num_classes, "different classes")
-        print()
+        logger.info(f"Train data: {len(train_data)} samples")
+        val_desc = "Not given" if val_data is None else f"{len(val_data)} samples"
+        logger.info(f"Val data:   {val_desc}")
+        test_desc = "Not given" if test_data is None else f"{len(test_data)} samples"
+        logger.info(f"Test data:  {test_desc}")
+        logger.info(f"Found {num_classes} different classes")
+        logger.info("")
 
         kwargs = {"batch_size": self.config.get("batch_size", 128)}
         if use_cuda:
@@ -217,7 +214,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         test_loader = DataLoader(test_data, **kwargs) if test_data is not None else None
 
         # Set up model, optimizer, loss.
-        print("Creating model...")
+        logger.info("Creating model...")
         device = torch.device("cuda" if use_cuda else "cpu")
         self._create_model(num_classes)
         optimizer = self._create_optimizer()
@@ -237,7 +234,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         )
         def log_training_loss(trainer):
             batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
-            print(
+            logger.info(
                 f"Epoch {trainer.state.epoch}, "
                 f"batch {batch} / {trainer.state.epoch_length}: "
                 f"Loss: {trainer.state.output:.3f}"
@@ -249,7 +246,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         def log_training_results(trainer):
             evaluator.run(train_loader)
             metrics = evaluator.state.metrics
-            print(
+            logger.info(
                 f"Training results - Epoch: {trainer.state.epoch}  "
                 f"Avg accuracy: {metrics['accuracy']:.3f} "
                 f"Avg loss: {metrics['loss']:.3f}"
@@ -266,7 +263,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             if val_loader:
                 evaluator.run(val_loader)
                 metrics = evaluator.state.metrics
-                print(
+                logger.info(
                     f"Validation results - Epoch: {trainer.state.epoch} "
                     f"Avg accuracy: {metrics['accuracy']:.3f} "
                     f"Avg loss: {metrics['loss']:.3f}"
@@ -283,7 +280,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             if test_loader:
                 evaluator.run(test_loader)
                 metrics = evaluator.state.metrics
-                print(
+                logger.info(
                     f"Test results - Epoch: {trainer.state.epoch} "
                     f"Avg accuracy: {metrics['accuracy']:.3f} "
                     f"Avg loss: {metrics['loss']:.3f}"
@@ -306,9 +303,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # Start training.
         max_epochs = 1 if dry_run else self.config.get("epochs", 5)
         epoch_length = 1 if dry_run else None
-        print(f"Training model on device {device}... (this may take a while)")
+        logger.info(f"Training model on device {device}... (this may take a while)")
         trainer.run(train_loader, max_epochs=max_epochs, epoch_length=epoch_length)
-        print("Training finished!")
+        logger.info("Training finished!")
 
         # Save the trained model.
         torch.save(self.model, self.out_dir / "model.pt")

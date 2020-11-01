@@ -15,6 +15,7 @@ from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
 from sklearn.utils import shuffle
 import joblib
 import numpy as np
+from loguru import logger
 
 from ..model_wrapper import ModelWrapper
 from . import data_utils
@@ -104,50 +105,55 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         """Trains the model, evaluates it on val/test data and saves it to file."""
 
         # Preprocess all datasets.
-        print("Preprocessing datasets...")
+        logger.info("Preprocessing datasets...")
         train_images, train_labels = self._preprocess_for_training(
             train_data, is_train=True
         )
         val_images, val_labels = self._preprocess_for_training(val_data)
         test_images, test_labels = self._preprocess_for_training(test_data)
-        print(
+
+        # TODO: Refactor this.
+        logger.info(
             f"Train data: {len(train_images)} samples, {train_images.shape[1]} features"
         )
-        print(
-            "Val data:  ",
-            None
-            if val_data is None
-            else f"{len(val_images)} samples, {val_images.shape[1]} features",
-        )
-        print(
-            "Test data: ",
-            None
-            if test_data is None
-            else f"{len(test_images)} samples, {test_images.shape[1]} features",
-        )
-        print()
+        if val_data is None:
+            logger.info("Val data:   Not given")
+        else:
+            logger.info(
+                f"Val data:   {len(val_images)} samples, {val_images.shape[1]} features"
+            )
+        if test_data is None:
+            logger.info("Test data:  Not given")
+        else:
+            logger.info(
+                f"Test data:  {len(test_images)} samples, {test_images.shape[1]} features"
+            )
+        logger.info("")
 
         # Create and fit model.
-        print("Creating model...")
+        logger.info("Creating model...")
         self._create_model()
-        print("Training model... (this may take a while)")
+        logger.info("Training model... (this may take a while)")
         self.model.fit(train_images, train_labels)
-        print("Training finished!")
-        print()
+        logger.info("Training finished!")
+        logger.info("")
 
         # Evaluate accuracy on all datasets and log to experiment.
         train_acc = self.model.score(train_images, train_labels)
-        print("Train accuracy:\t", train_acc)
+        # TODO: Maybe refactor this so I don't have to call similar functions 3 times.
+        # TODO: Remove tabs here, they interfere with loguru's file saving (and are
+        #   ugly).
+        logger.info(f"Train accuracy:\t {train_acc}")
         writer.add_scalar("train_accuracy", train_acc)
         experiment.log_metric("train_accuracy", train_acc)
         if val_data is not None:
             val_acc = self.model.score(val_images, val_labels)
-            print("Val accuracy:\t", val_acc)
+            logger.info(f"Val accuracy:\t {val_acc}")
             writer.add_scalar("val_accuracy", val_acc)
             experiment.log_metric("val_accuracy", val_acc)
         if test_data is not None:
             test_acc = self.model.score(test_images, test_labels)
-            print("Test accuracy:\t", test_acc)
+            logger.info(f"Test accuracy:\t {test_acc}")
             writer.add_scalar("test_accuracy", test_acc)
             experiment.log_metric("test_accuracy", test_acc)
 
