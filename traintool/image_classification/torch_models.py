@@ -162,7 +162,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
     ) -> None:
 
         use_cuda = torch.cuda.is_available()
-        
+
+        print("Preprocessing datasets...")
         # Get number of classes from config or infer from train_data.
         if "num_classes" in self.config:
             num_classes = self.config["num_classes"]
@@ -195,6 +196,16 @@ class TorchImageClassificationWrapper(ModelWrapper):
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
         )
+        # TODO: Maybe print some more stuff about the data.
+        print(f"Train data: {len(train_data)} samples")
+        print(
+            "Val data:  ", None if val_data is None else f"{len(val_data)} samples",
+        )
+        print(
+            "Test data: ", None if test_data is None else f"{len(test_data)} samples",
+        )
+        print("Found", num_classes, "different classes")
+        print()
 
         kwargs = {"batch_size": self.config.get("batch_size", 128)}
         if use_cuda:
@@ -206,6 +217,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         test_loader = DataLoader(test_data, **kwargs) if test_data is not None else None
 
         # Set up model, optimizer, loss.
+        print("Creating model...")
         device = torch.device("cuda" if use_cuda else "cpu")
         self._create_model(num_classes)
         optimizer = self._create_optimizer()
@@ -294,7 +306,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
         # Start training.
         max_epochs = 1 if dry_run else self.config.get("epochs", 5)
         epoch_length = 1 if dry_run else None
+        print(f"Training model on device {device}... (this may take a while)")
         trainer.run(train_loader, max_epochs=max_epochs, epoch_length=epoch_length)
+        print("Training finished!")
 
         # Save the trained model.
         torch.save(self.model, self.out_dir / "model.pt")
