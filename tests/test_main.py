@@ -41,13 +41,20 @@ def test_resolve_model():
 
 
 def test_write_read_info_file(tmp_path):
-    _write_info_file(tmp_path, "some-model", {"param1": 123})
-
+    _write_info_file(tmp_path, status="Running", config={"param1": 123})
     assert (tmp_path / "info.yml").exists()
 
+    # read the file and verify it matches
     content = _read_info_file(tmp_path)
-    assert content["model_name"] == "some-model"
+    assert content["status"] == "Running"
     assert content["config"]["param1"] == 123
+
+    # update and read again
+    _write_info_file(tmp_path, status="Stopped", end_time=1)
+    content = _read_info_file(tmp_path)
+    assert content["status"] == "Stopped"
+    assert content["config"]["param1"] == 123
+    assert content["end_time"] == 1
 
 
 def test_create_comet_experiment():
@@ -81,10 +88,7 @@ def test_train(tmp_path):
 
     # With save=False (this has to be checked first, so tmp_path is still empty)
     model_wrapper = train(
-        "random-forest",
-        train_data=train_data,
-        dry_run=True,
-        save=False,
+        "random-forest", train_data=train_data, dry_run=True, save=False,
     )
     assert isinstance(model_wrapper, ModelWrapper)
     assert not any(tmp_path.iterdir())  # is empty dir
@@ -101,13 +105,10 @@ def test_train(tmp_path):
     assert isinstance(model_wrapper, ModelWrapper)
     assert (tmp_path / "info.yml").exists()
     assert (tmp_path / "model.joblib").exists()
-    
+
     # With only train data
     model_wrapper = train(
-        "random-forest",
-        train_data=train_data,
-        dry_run=True,
-        save=tmp_path,
+        "random-forest", train_data=train_data, dry_run=True, save=tmp_path,
     )
     assert isinstance(model_wrapper, ModelWrapper)
     assert (tmp_path / "info.yml").exists()
@@ -126,7 +127,7 @@ def test_load(tmp_path):
     loaded_model_wrapper = load(tmp_path)
     assert isinstance(loaded_model_wrapper, ModelWrapper)
     assert loaded_model_wrapper.model is not None
-    # TODO: Make some more checks on loaded_model_wrapper, possibly using a dummy 
+    # TODO: Make some more checks on loaded_model_wrapper, possibly using a dummy
     #   wrapper class.
 
 

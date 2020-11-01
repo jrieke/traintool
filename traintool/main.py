@@ -6,6 +6,7 @@ from tensorboardX import SummaryWriter
 import tempfile
 import editdistance
 import numpy as np
+from datetime import datetime
 
 from . import utils
 from . import image_classification
@@ -77,17 +78,38 @@ def _resolve_model(model_name: str) -> Type[ModelWrapper]:
 #     return final_config
 
 
-def _write_info_file(out_dir: Path, model_name: str, config: dict) -> None:
-    """Create a file info.yml in out_dir that contains some information about the run"""
-    # TODO: Add more stuff, e.g. start time, status, machine configuration.
-    info = {"model_name": model_name, "config": config}
+# def _write_info_file(
+#     out_dir: Path, model_name: str, config: dict, start_time: datetime
+# ) -> None:
+#     """Create a file info.yml in out_dir that contains some information about the run"""
+#     # TODO: Add more stuff, e.g. start time, status, machine configuration.
+#     info = {
+#         "model_name": model_name,
+#         "config": config,
+#         "start_time": start_time,
+#         "status": "Running",
+#     }
+#     with (out_dir / "info.yml").open("w") as f:
+#         yaml.dump(info, f)
+
+
+def _write_info_file(out_dir: Path, **kwargs) -> None:
+    """
+    Create a yaml file info.yml in out_dir that contains kwargs. 
+    If the file already exists, it will be updated.
+    """
+    print(kwargs)
+    if (out_dir / "info.yml").exists():
+        info = _read_info_file(out_dir)
+        info.update(kwargs)
+    else:
+        info = kwargs
     with (out_dir / "info.yml").open("w") as f:
-        yaml.dump(info, f)
+        yaml.dump(info, f, sort_keys=False)
 
 
 def _read_info_file(out_dir: Path) -> None:
     """Read the file out_dir / info.yml and return its content."""
-    # TODO: Add more stuff, e.g. start time, status, machine configuration.
     with (out_dir / "info.yml").open("r") as f:
         return yaml.load(f, Loader=yaml.FullLoader)
 
@@ -171,6 +193,8 @@ def train(
     # else:
     #     config = _update_config(default_config, config)
 
+    start_time = datetime.now()
+
     with tempfile.TemporaryDirectory() as tmp_dir:  # only used when save=True
 
         if config is None:
@@ -180,8 +204,8 @@ def train(
         # invalid).
         model_wrapper_class = _resolve_model(model_name)
 
-        # Create out_dir and file with some general information.
-        experiment_id = f"{utils.timestamp()}_{model_name}"
+        # Create out_dir and write file with some general information.
+        experiment_id = f"{start_time.strftime('%Y-%m-%d_%H-%M-%S')}_{model_name}"
         if save is True:  # timestamped dir in ./traintool-experiments
             out_dir = project_dir / experiment_id
             out_dir.mkdir(parents=True, exist_ok=False)
@@ -193,10 +217,13 @@ def train(
         else:  # use save as dir
             out_dir = Path(save)
             out_dir.mkdir(parents=True, exist_ok=True)
-        _write_info_file(out_dir, model_name=model_name, config=config)
-
-        # Create model wrapper.
-        model_wrapper = model_wrapper_class(model_name, config, out_dir)
+        _write_info_file(
+            out_dir,
+            status="Running",
+            model_name=model_name,
+            config=config,
+            start_time=str(start_time),
+        )
 
         # Print some info
         print("  traintool experiment  ".center(80, "="))
@@ -226,23 +253,37 @@ def train(
         # This has to be done right before training because it prints some stuff.
         experiment = _create_comet_experiment(config=config, save=save)
 
-        # Start training the model
-        model_wrapper._train(
-            train_data=train_data,
-            val_data=val_data,
-            test_data=test_data,
-            writer=writer,
-            experiment=experiment,
-            dry_run=dry_run,
-        )
-
-        # End experiment
-        experiment.end()
-        writer.close()
-        print("  Finished!  ".center(80, "="))
-
-        # Add end time and run time to out_dir / info.yml
-        # TODO
+        try:
+            # Create model wrapper and start training.
+            model_wrapper = model_wrapper_class(model_name, config, out_dir)
+            model_wrapper._train(
+                train_data=train_data,
+                val_data=val_data,
+                test_data=test_data,
+                writer=writer,
+                experiment=experiment,
+                dry_run=dry_run,
+            )
+        except:  # noqa: E722
+            status = "Failed"
+            raise
+        else:
+            status = "Finished"
+        finally:
+            # End experiment and write to log and info file.
+            # TODO: Check if error is still tracked in comet ml experiment.s
+            experiment.end()
+            writer.close()
+            end_time = datetime.now()
+            duration = end_time - start_time
+            _write_info_file(
+                out_dir, status=status, end_time=str(end_time), duration=str(duration)
+            )
+            print(
+                f"  {status}! (after {utils.format_timedelta(duration)})  ".center(
+                    80, "="
+                )
+            )
 
         return model_wrapper
 

@@ -41,3 +41,25 @@ class DummyExperiment:
 def timestamp() -> str:
     """Return a string timestamp."""
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+
+def format_timedelta(delta) -> str:
+    """Formats timedelta to x days, x h, x min, x s."""
+    s = delta.total_seconds()
+    days, remainder = divmod(s, 86400)
+    hours, remainder = divmod(s, 3600)
+    mins, secs = divmod(remainder, 60)
+    
+    days = int(days)
+    hours = int(hours)
+    mins = int(mins)
+    secs = int(secs)
+
+    output = f"{secs} s"
+    if mins:
+        output = f"{mins} min, " + output
+    if hours:
+        output = f"{hours} h, " + output
+    if days:
+        output = f"{days} days, " + output
+    return output
