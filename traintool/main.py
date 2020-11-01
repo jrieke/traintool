@@ -297,20 +297,3 @@ def load(name_or_dir: Union[str, Path]) -> ModelWrapper:
 #     # TODO: Actually implement this for all subclasses.
 #     model_wrapper_class = _resolve_model(model_name)
 #     return model_wrapper_class.default_config(model_name)
-
-
-# def _get_data_format(train_data):
-#     """Return data format ("torch", "numpy", or "dir") for the data."""
-
-#     # TODO: Maybe also check val_data and test_data.
-#     if isinstance(train_data, torch.utils.data.Dataset):
-#         return "torch"
-#     elif isinstance(train_data, list) and isinstance(train_data[0], np.ndarray):
-#         return "numpy"
-#     elif isinstance(train_data, str) or isinstance(train_data, Path):
-#         return "dir"
-#     else:
-#         raise ValueError(
-#             "Could not recognize format of train_data and/or test_data. Supported "
-#             "formats: list of numpy arrays, torch dataset"
-#         )
