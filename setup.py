@@ -23,7 +23,7 @@ setup(
         "torchvision",
         "pytorch-ignite",
         "comet_ml",
-        "pyyaml",
+        "pyyaml>=5.1",  # for sort_keys arg
         "scikit-learn",
         "fastapi",
         "uvicorn",
@@ -31,6 +31,7 @@ setup(
         "tensorboardX",
         "tensorboard",
         "imageio",
+        "loguru",
     ],
     entry_points="""""",
     classifiers=[
