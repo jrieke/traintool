@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader
 import torchvision
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
-import warnings
 import numpy as np
 
 # from loguru import logger

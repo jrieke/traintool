@@ -1,14 +1,4 @@
--f https://download.pytorch.org/whl/torch_stable.html
-numpy
+--find-links https://download.pytorch.org/whl/torch_stable.html
 torch==1.7.0+cpu
 torchvision==0.8.1+cpu
-pytorch-ignite
-comet_ml
-pyyaml
-scikit-learn
-fastapi
-uvicorn
-joblib
-tensorboardX
-tensorboard
-imageio
+-e .
