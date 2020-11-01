@@ -104,15 +104,36 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         """Trains the model, evaluates it on val/test data and saves it to file."""
 
         # Preprocess all datasets.
+        print("Preprocessing datasets...")
         train_images, train_labels = self._preprocess_for_training(
             train_data, is_train=True
         )
         val_images, val_labels = self._preprocess_for_training(val_data)
         test_images, test_labels = self._preprocess_for_training(test_data)
+        print(
+            f"Train data: {len(train_images)} samples, {train_images.shape[1]} features"
+        )
+        print(
+            "Val data:  ",
+            None
+            if val_data is None
+            else f"{len(val_images)} samples, {val_images.shape[1]} features",
+        )
+        print(
+            "Test data: ",
+            None
+            if test_data is None
+            else f"{len(test_images)} samples, {test_images.shape[1]} features",
+        )
+        print()
 
         # Create and fit model.
+        print("Creating model...")
         self._create_model()
+        print("Training model... (this may take a while)")
         self.model.fit(train_images, train_labels)
+        print("Training finished!")
+        print()
 
         # Evaluate accuracy on all datasets and log to experiment.
         train_acc = self.model.score(train_images, train_labels)

@@ -182,9 +182,9 @@ def train(
         model_wrapper_class = _resolve_model(model_name)
 
         # Create out_dir and file with some general information.
-        experiment_name = f"{utils.timestamp()}_{model_name}"
+        experiment_id = f"{utils.timestamp()}_{model_name}"
         if save is True:  # timestamped dir in ./traintool-experiments
-            out_dir = project_dir / experiment_name
+            out_dir = project_dir / experiment_id
             out_dir.mkdir(parents=True, exist_ok=False)
         elif save is False:  # temporary dir
             # TODO: For convenience, we are just making out_dir a temporary directory
@@ -201,12 +201,12 @@ def train(
 
         # Print some info
         print("  traintool experiment  ".center(80, "="))
-        print("ID:".ljust(15), experiment_name)
-        print("Model:".ljust(15), model_name)
-        print("Config:".ljust(15), config)
-        print("Output dir:".ljust(15), out_dir)
+        print("ID:".ljust(12), experiment_id)
+        print("Model:".ljust(12), model_name)
+        print("Config:".ljust(12), config)
+        print("Output dir:".ljust(12), out_dir)
         if save is False:
-            print(" " * 15, "(temporary directory, will be automatically removed)")
+            print(" " * 12, "(temporary directory, will be automatically removed)")
         if "api_key" in comet_config:
             print(
                 "Logging to comet.ml",
@@ -214,6 +214,7 @@ def train(
                 if comet_config["project_name"] is not None
                 else "",
             )
+        print("Load via:".ljust(12), f'traintool.load("{experiment_id}")')
         print("=" * 80)
         if dry_run:
             print(">>> THIS IS JUST A DRY RUN <<<")
@@ -239,7 +240,7 @@ def train(
         # End experiment
         experiment.end()
         writer.close()
-        print("  Finished  ".center(80, "="))
+        print("  Finished!  ".center(80, "="))
 
         # Add end time and run time to out_dir / info.yml
         # TODO
