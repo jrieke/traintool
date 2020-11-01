@@ -76,6 +76,13 @@ class ModelWrapper(ABC):
 
         uvicorn.run(app, **kwargs)
 
+    def __repr__(self):
+        # TODO: Maybe print something a bit shorter.
+        return (
+            f"Model '{self.model_name}' with config {self.config}, "
+            f"saved in {self.out_dir}"
+        )
+
     # @staticmethod
     # @abstractmethod
     # def default_config(model_name: str) -> dict:
