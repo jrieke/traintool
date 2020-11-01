@@ -86,7 +86,9 @@ def _resolve_model(model_name: str) -> Type[ModelWrapper]:
 # def _write_info_file(
 #     out_dir: Path, model_name: str, config: dict, start_time: datetime
 # ) -> None:
-#     """Create a file info.yml in out_dir that contains some information about the run"""
+#     """
+#     Create a file info.yml in out_dir that contains some information about the run
+#     """
 #     # TODO: Add more stuff, e.g. start time, status, machine configuration.
 #     info = {
 #         "model_name": model_name,

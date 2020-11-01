@@ -126,7 +126,8 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             logger.info("Test data:  Not given")
         else:
             logger.info(
-                f"Test data:  {len(test_images)} samples, {test_images.shape[1]} features"
+                f"Test data:  {len(test_images)} samples, {test_images.shape[1]} "
+                "features"
             )
         logger.info("")
 
