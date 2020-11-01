@@ -93,7 +93,7 @@ def _read_info_file(out_dir: Path) -> None:
 
 
 def _create_comet_experiment(
-    config: dict = None, dry_run: bool = False
+    config: dict = None, save: bool = False
 ) -> Union[Experiment, utils.DummyExperiment]:
     """
     Creates a comet_ml.Experiment object, or a dummy replacement object. 
@@ -107,8 +107,7 @@ def _create_comet_experiment(
         experiment = Experiment(
             api_key=comet_config["api_key"],
             project_name=comet_config["project_name"],
-            disabled=dry_run,  # does not write to server if dry_run is True
-            # TODO: Even create experiment on dry run?
+            disabled=save,  # does not write to server if save is False
         )
         experiment.log_parameters(config)
     else:
@@ -225,7 +224,7 @@ def train(
 
         # Create comet.ml experiment (or dummy object if comet is not used).
         # This has to be done right before training because it prints some stuff.
-        experiment = _create_comet_experiment(config=config, dry_run=save)
+        experiment = _create_comet_experiment(config=config, save=save)
 
         # Start training the model
         model_wrapper._train(

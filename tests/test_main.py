@@ -52,13 +52,13 @@ def test_write_read_info_file(tmp_path):
 
 def test_create_comet_experiment():
     # Fake experiment object (traintool.connect_comet not called)
-    experiment = _create_comet_experiment(dry_run=True)
+    experiment = _create_comet_experiment(save=True)
     experiment.log_metric("fake-metric", 1)
     assert isinstance(experiment, DummyExperiment)
 
     # Real experiment object
     connect_comet("fake-api-key")  # won't connect with with dry_run == True
-    experiment = _create_comet_experiment(dry_run=True)
+    experiment = _create_comet_experiment(save=True)
     experiment.log_metric("fake-metric", 1)
     assert isinstance(experiment, comet_ml.Experiment)
 
