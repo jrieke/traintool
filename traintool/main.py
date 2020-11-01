@@ -130,6 +130,7 @@ def _create_comet_experiment(
             api_key=comet_config["api_key"],
             project_name=comet_config["project_name"],
             disabled=save,  # does not write to server if save is False
+            display_summary_level=0,
         )
         experiment.log_parameters(config)
     else:
