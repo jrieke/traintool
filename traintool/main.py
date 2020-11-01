@@ -177,6 +177,10 @@ def train(
         if config is None:
             config = {}
 
+        # Resolve model class (done here so no output dir is created if model_name is
+        # invalid).
+        model_wrapper_class = _resolve_model(model_name)
+
         # Create out_dir and file with some general information.
         experiment_name = f"{utils.timestamp()}_{model_name}"
         if save is True:  # timestamped dir in ./traintool-experiments
@@ -192,17 +196,17 @@ def train(
             out_dir.mkdir(parents=True, exist_ok=True)
         _write_info_file(out_dir, model_name=model_name, config=config)
 
-        # Create model wrapper based on model_name (checking that model_name is valid)
-        model_wrapper_class = _resolve_model(model_name)
+        # Create model wrapper.
         model_wrapper = model_wrapper_class(model_name, config, out_dir)
 
         # Print some info
-        # print("=" * 29, "traintool experiment", "=" * 29)
         print("  traintool experiment  ".center(80, "="))
-        print("Name:".ljust(15), experiment_name)
-        print("Model name:".ljust(15), model_name)
-        print("Configuration:".ljust(15), config)
+        print("ID:".ljust(15), experiment_name)
+        print("Model:".ljust(15), model_name)
+        print("Config:".ljust(15), config)
         print("Output dir:".ljust(15), out_dir)
+        if save is False:
+            print(" " * 15, "(temporary directory, will be automatically removed)")
         if "api_key" in comet_config:
             print(
                 "Logging to comet.ml",
@@ -235,10 +239,7 @@ def train(
         # End experiment
         experiment.end()
         writer.close()
-        print()
-        print("=" * 80)
-        print()
-        print("Finished!")
+        print("  Finished  ".center(80, "="))
 
         # Add end time and run time to out_dir / info.yml
         # TODO
