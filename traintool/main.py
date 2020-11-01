@@ -4,6 +4,8 @@ from pathlib import Path
 import yaml
 from tensorboardX import SummaryWriter
 import tempfile
+import editdistance
+import numpy as np
 
 from . import utils
 from . import image_classification
@@ -15,65 +17,64 @@ comet_config = {}
 project_dir = Path.cwd() / "traintool-experiments"
 
 
-def connect_comet(api_key: str = None, project_name: str = None) -> None:
-    """Connect comet.ml account to traintool (required to track metrics)."""
-    comet_config["api_key"] = api_key
-    comet_config["project_name"] = project_name
+model_dict = {
+    "simple-cnn": image_classification.TorchImageClassificationWrapper,
+    "resnet18": image_classification.TorchImageClassificationWrapper,
+    "alexnet": image_classification.TorchImageClassificationWrapper,
+    "vgg16": image_classification.TorchImageClassificationWrapper,
+    "squeezenet": image_classification.TorchImageClassificationWrapper,
+    "densenet": image_classification.TorchImageClassificationWrapper,
+    "inception": image_classification.TorchImageClassificationWrapper,
+    "googlenet": image_classification.TorchImageClassificationWrapper,
+    "shufflenet": image_classification.TorchImageClassificationWrapper,
+    "mobilenet": image_classification.TorchImageClassificationWrapper,
+    "resnext50_32x4d": image_classification.TorchImageClassificationWrapper,
+    "wide_resnet50_2": image_classification.TorchImageClassificationWrapper,
+    "mnasnet": image_classification.TorchImageClassificationWrapper,
+    "random-forest": image_classification.SklearnImageClassificationWrapper,
+    "gradient-boosting": image_classification.SklearnImageClassificationWrapper,
+    "gaussian-process": image_classification.SklearnImageClassificationWrapper,
+    "logistic-regression": image_classification.SklearnImageClassificationWrapper,
+    "sgd": image_classification.SklearnImageClassificationWrapper,
+    "perceptron": image_classification.SklearnImageClassificationWrapper,
+    "passive-aggressive": image_classification.SklearnImageClassificationWrapper,
+    "gaussian-nb": image_classification.SklearnImageClassificationWrapper,
+    "k-neighbors": image_classification.SklearnImageClassificationWrapper,
+    "mlp": image_classification.SklearnImageClassificationWrapper,
+    "svc": image_classification.SklearnImageClassificationWrapper,
+    "linear-svc": image_classification.SklearnImageClassificationWrapper,
+    "decision-tree": image_classification.SklearnImageClassificationWrapper,
+    "extra-tree": image_classification.SklearnImageClassificationWrapper,
+}
 
 
 def _resolve_model(model_name: str) -> Type[ModelWrapper]:
     """Return class of model wrapper that is used for model_name."""
-    # TODO: Maybe change the structure so that each model has its unique class, by
-    #   subclassing a common class.
-    if model_name in [
-        "simple-cnn",
-        "resnet18",
-        "alexnet",
-        "vgg16",
-        "squeezenet",
-        "densenet",
-        "inception",
-        "googlenet",
-        "shufflenet",
-        "mobilenet",
-        "resnext50_32x4d",
-        "wide_resnet50_2",
-        "mnasnet",
-    ]:
-        return image_classification.TorchImageClassificationWrapper
-    elif model_name in [
-        "random-forest",
-        "gradient-boosting",
-        "gaussian-process",
-        "logistic-regression",
-        "sgd",
-        "perceptron",
-        "passive-aggressive",
-        "gaussian-nb",
-        "k-neighbors",
-        "mlp",
-        "svc",
-        "linear-svc",
-        "decision-tree",
-        "extra-tree",
-    ]:
-        return image_classification.SklearnImageClassificationWrapper
+    if model_name in model_dict:
+        return model_dict[model_name]
     else:
-        raise ValueError(f"Model not recognized: {model_name}")
+        # Find most similar model name.
+        models = list(model_dict.keys())
+        distances = [editdistance.eval(model_name, model) for model in models]
+        most_similar = models[np.argmin(distances)]
+
+        raise ValueError(
+            f"Model not recognized: {model_name} " f"(did you mean {most_similar}?)"
+        )
 
 
-def _update_config(default_config: dict, config: dict) -> dict:
-    """Update values in default_config with values in config"""
-    final_config = default_config.copy()
-    for key, value in config.items():
-        if key not in final_config:
-            raise ValueError(
-                "config contains a parameter that is not supported for this model: "
-                f"{key}"
-            )
-        else:
-            final_config[key] = value
-    return final_config
+# def _update_config(default_config: dict, config: dict) -> dict:
+#     """Update values in default_config with values in config"""
+#     final_config = default_config.copy()
+#     for key, value in config.items():
+#         if key not in final_config:
+#             raise ValueError(
+#                 "config contains a parameter that is not supported for this model: "
+#                 f"{key}"
+#             )
+#         else:
+#             final_config[key] = value
+#     return final_config
 
 
 def _write_info_file(out_dir: Path, model_name: str, config: dict) -> None:
@@ -118,6 +119,12 @@ def _create_comet_experiment(
 def _create_tensorboard_writer(out_dir: Path, write_to_disk: bool = True):
     """Returns a writer for tensorboard that logs to out_dir"""
     return SummaryWriter(logdir=(out_dir / "tb").resolve(), write_to_disk=write_to_disk)
+
+
+def connect_comet(api_key: str = None, project_name: str = None) -> None:
+    """Connect comet.ml account to traintool (required to track metrics)."""
+    comet_config["api_key"] = api_key
+    comet_config["project_name"] = project_name
 
 
 def train(
