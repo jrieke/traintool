@@ -31,7 +31,7 @@ for **experiment tracking** and **deployment**.
 ## Installation
 
 ```bash
-pip install git+https://github.com/jrieke/traintool
+pip install traintool
 ```
 
 ## Is traintool for you?

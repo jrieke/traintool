@@ -30,7 +30,7 @@ or [write me](mailto:johannes.rieke@gmail.com).</sup>
 ## Installation
 
 ```bash
-pip install git+https://github.com/jrieke/traintool
+pip install traintool
 ```
 
 ## Is traintool for you?
