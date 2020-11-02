@@ -8,11 +8,11 @@ setup(
     version=parent_dir.joinpath("traintool/_version.txt").read_text(encoding="utf-8"),
     author="Johannes Rieke",
     author_email="johannes.rieke@gmail.com",
-    description="Train pre-implemented machine learning models with one line of code",
+    description="Machine learning in one line of code",
     long_description=parent_dir.joinpath("README.md").read_text(),
     long_description_content_type="text/markdown",
     url="https://github.com/jrieke/traintool",
-    license="",
+    license="Apache-2.0 License",
     packages=find_packages(exclude=("tests", "docs", "examples")),
     package_data={"": ["_version.txt"]},
     include_package_data=True,
@@ -38,7 +38,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
     ],
 )
