@@ -8,8 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
-    # NOTE: <=3.6 doesn't work because these versions don't have __future__.annotations
+        python-version: [3.5, 3.6, 3.7, 3.8]
     # 3.9 gives an error right now because pytorch doesn't support it yet apparently.
 
     steps:
