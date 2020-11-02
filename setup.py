@@ -9,7 +9,12 @@ setup(
     author="Johannes Rieke",
     author_email="johannes.rieke@gmail.com",
     description="Machine learning in one line of code",
-    long_description=parent_dir.joinpath("README.md").read_text(),
+    long_description=parent_dir.joinpath("README.md")
+    .read_text()
+    .replace(
+        "docs/assets/",
+        "https://raw.githubusercontent.com/jrieke/traintool/master/docs/assets/",
+    ),
     long_description_content_type="text/markdown",
     url="https://github.com/jrieke/traintool",
     license="Apache-2.0 License",
