@@ -17,7 +17,7 @@ setup(
     package_data={"": ["_version.txt"]},
     include_package_data=True,
     zip_safe=False,
-    python_requires=">=3.7",
+    # python_requires=">=3.7",
     install_requires=[
         "numpy",
         "torch",
