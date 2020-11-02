@@ -16,7 +16,9 @@ from .model_wrapper import ModelWrapper
 
 # Configure default logger so that it's equal to print.
 logger.remove()
-logger.add(sys.stderr, format="{message}", level="INFO")
+logger.add(
+    sys.stderr, format="{message}", level="INFO", backtrace=False, diagnose=False
+)
 
 comet_config = {}
 # TODO: Add a method to change the project dir.
@@ -285,12 +287,13 @@ def train(
             )
         except:  # noqa: E722
             status = "Failed"
+            logger.exception("ERROR: Training interrupted by an exception (see below)")
             raise
         else:
             status = "Finished"
         finally:
             # End experiment and write to log and info file.
-            # TODO: Check if error is still tracked in comet ml experiment.s
+            # TODO: Check if error is still tracked in comet ml experiment.
             experiment.end()
             writer.close()
             end_time = datetime.now()
