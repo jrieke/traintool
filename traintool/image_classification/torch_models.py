@@ -109,6 +109,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 )
 
             # Create model.
+            # TODO: Pass additional kwargs on to model (is this possible?).
             self.model = getattr(torchvision.models, self.model_name)(
                 pretrained=pretrained, num_classes=num_classes
             )

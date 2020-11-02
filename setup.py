@@ -32,6 +32,7 @@ setup(
         "tensorboard",
         "imageio",
         "loguru",
+        "editdistance",
     ],
     entry_points="""""",
     classifiers=[
