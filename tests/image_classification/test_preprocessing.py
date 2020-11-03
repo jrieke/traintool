@@ -5,7 +5,7 @@ import torch
 
 from conftest import create_dataset, create_image
 
-from traintool.image_classification.data_utils import (
+from traintool.image_classification.preprocessing import (
     recognize_data_format,
     torch_to_numpy,
     numpy_to_torch,

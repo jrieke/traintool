@@ -11,7 +11,7 @@ import numpy as np
 from loguru import logger
 
 from ..model_wrapper import ModelWrapper
-from . import data_utils
+from . import preprocessing
 from .. import utils
 
 # TODO: This isn't actually used anymore. See if we still need it at some point or it
@@ -168,28 +168,28 @@ class TorchImageClassificationWrapper(ModelWrapper):
         if "num_classes" in self.config:
             num_classes = self.config["num_classes"]
         else:
-            num_classes = data_utils.get_num_classes(train_data)
+            num_classes = preprocessing.get_num_classes(train_data)
 
         # Preprocess all datasets.
         # TODO: mean and std normalization applies only to pretrained models. But
         #   doesn't this also make sense for not-pretrained? Or should I scale to mean
         #   0 and std 1 here? See also the code here:
         #   https://pytorch.org/docs/stable/torchvision/models.html
-        train_data = data_utils.to_torch(
+        train_data = preprocessing.to_torch(
             train_data,
             resize=256,
             crop=224,
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
         )
-        val_data = data_utils.to_torch(
+        val_data = preprocessing.to_torch(
             train_data,
             resize=256,
             crop=224,
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
         )
-        test_data = data_utils.to_torch(
+        test_data = preprocessing.to_torch(
             train_data,
             resize=256,
             crop=224,
@@ -319,9 +319,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
         """Runs data through the model and returns output."""
 
         # Convert data format if required.
-        image_format = data_utils.recognize_image_format(image)
+        image_format = preprocessing.recognize_image_format(image)
         if image_format == "files":
-            image = data_utils.load_image(
+            image = preprocessing.load_image(
                 image,
                 to_numpy=False,
                 resize=256,
@@ -330,12 +330,12 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 std=[0.229, 0.224, 0.225],
             )
         elif image_format == "numpy":
-            # TODO: This is almost the same code as in data_utils.numpy_to_torch,
+            # TODO: This is almost the same code as in preprocessing.numpy_to_torch,
             #   maybe refactor it.
 
             # Rescale images to 0-255 and convert to uint8.
             # TODO: This should probably be done with the same min/max values as train
-            #   set, see note in data_utils.numpy_to_torch.
+            #   set, see note in preprocessing.numpy_to_torch.
             image = (image - np.min(image)) / np.ptp(image) * 255
             image = image.astype(np.uint8)
 
@@ -350,7 +350,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             # to tensor.
             # TODO: Converting to PIL and then to tensor is not super efficient, find
             #   a better method.
-            transform = data_utils.create_transform(
+            transform = preprocessing.create_transform(
                 from_numpy=True,
                 resize=256,
                 crop=224,

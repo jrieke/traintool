@@ -1,4 +1,4 @@
-from sklearn import preprocessing
+import sklearn.preprocessing
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.linear_model import (
@@ -18,7 +18,7 @@ import numpy as np
 from loguru import logger
 
 from ..model_wrapper import ModelWrapper
-from . import data_utils
+from . import preprocessing
 
 
 classifier_dict = {
@@ -75,7 +75,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             return None, None
 
         # Convert format.
-        data = data_utils.to_numpy(data, resize=28, crop=28)
+        data = preprocessing.to_numpy(data, resize=28, crop=28)
         images, labels = data
 
         # Flatten.
@@ -84,7 +84,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         # Scale mean and std.
         # TODO: Maybe make mean and std as config parameters here.
         if is_train:
-            self.scaler = preprocessing.StandardScaler().fit(images)
+            self.scaler = sklearn.preprocessing.StandardScaler().fit(images)
         images = self.scaler.transform(images)
 
         # Shuffle train set.
@@ -177,12 +177,12 @@ class SklearnImageClassificationWrapper(ModelWrapper):
 
         # Convert data format if required.
         # TODO: Maybe refactor this with the code in torch_models.predict.
-        image_format = data_utils.recognize_image_format(image)
+        image_format = preprocessing.recognize_image_format(image)
         if image_format == "files":
             # TODO: If the network was trained with numpy images,
             #   we need to convert to the same size and potentially convert to
             #   grayscale.
-            image = data_utils.load_image(image, to_numpy=True, resize=28, crop=28)
+            image = preprocessing.load_image(image, to_numpy=True, resize=28, crop=28)
         elif image_format == "numpy":
             pass  # no conversion
         else:
