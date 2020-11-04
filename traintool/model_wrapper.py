@@ -7,6 +7,12 @@ from fastapi import FastAPI, Body
 import uvicorn
 import numpy as np
 from abc import ABC, abstractmethod
+from datetime import datetime
+from pydantic import BaseModel
+
+
+class PredictRequest(BaseModel):
+    image: list
 
 
 class ModelWrapper(ABC):
@@ -60,22 +66,45 @@ class ModelWrapper(ABC):
 
     def deploy(self, **kwargs) -> None:
         """Deploys the model through a REST API. kwargs are forwarded to uvicorn."""
-        app = FastAPI()
+        # TODO: Set version here via version arg. Maybe read _version.txt file or 
+        #   implement version in __version__.
+        app = FastAPI(title="traintool")
+        deploy_time = datetime.now()
 
         @app.get("/")
-        def test():
-            return "Hello World"
+        def index():
+            # TODO: Maybe return the same information as in info.yml file,
+            #   or experiment ID.
+            return {
+                "model_name": self.model_name,
+                "config": self.config,
+                "deploy_time": deploy_time,
+            }
 
-        @app.get("/predict")
-        def predict(img_list: list = Body(...)):
+        @app.post("/predict")
+        def predict(predict_request: PredictRequest):
             """Endpoint to classify an image with a deployed model"""
+            
+            start_time = datetime.now()
+            
+            # Convert image to numpy array (is list of lists, i.e. what
+            # array.tolist() prints out).
+            # TODO: Accept image files and paths to images online.
+            # TODO: Think about which other parameters to include in predict_request.
+            img_arr = np.asarray(predict_request.image)
 
-            # Image in request is a list of lists. Convert it back to numpy here.
-            img_arr = np.array(img_list)
+            # Run through model.
+            result = self.predict(img_arr)
 
-            # Run image through model.
-            results = self.predict(img_arr)
-            return results
+            # Convert numpy arrays in result dict to lists.
+            for key, value in result.items():
+                try:
+                    result[key] = value.tolist()
+                except AttributeError:
+                    pass  # not an array
+                
+            result["runtime"] = str(datetime.now() - start_time)
+            return result
 
         uvicorn.run(app, **kwargs)
 
