@@ -1,3 +1,7 @@
+"""
+Base class for all model wrappers.
+"""
+
 from pathlib import Path
 from fastapi import FastAPI, Body
 import uvicorn

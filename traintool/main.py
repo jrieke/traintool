@@ -1,3 +1,7 @@
+"""
+Main API methods for traintool (this is what's called by the user).
+"""
+
 from comet_ml import Experiment
 from typing import Union, Type
 from pathlib import Path

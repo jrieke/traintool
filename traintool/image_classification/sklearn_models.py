@@ -1,3 +1,7 @@
+"""
+Wrapper around scikit-learn image classification models.
+"""
+
 import sklearn.preprocessing
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier

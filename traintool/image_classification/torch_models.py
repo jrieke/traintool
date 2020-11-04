@@ -1,3 +1,7 @@
+"""
+Wrapper around pytorch image classification models.
+"""
+
 import comet_ml  # noqa: F401
 import torch
 import torch.nn as nn

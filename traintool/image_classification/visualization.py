@@ -1,3 +1,7 @@
+"""
+Plots to visualize training results in tensorboard.
+"""
+
 # from tensorboardX import SummaryWriter
 import matplotlib as mpl
 import matplotlib.pyplot as plt

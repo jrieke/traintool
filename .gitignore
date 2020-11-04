@@ -2,6 +2,7 @@ data
 settings.json
 .vscode
 traintool-experiments
+.VSCodeCounter
 
 
 # Byte-compiled / optimized / DLL files
