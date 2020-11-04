@@ -3,7 +3,7 @@ Base class for all model wrappers.
 """
 
 from pathlib import Path
-from fastapi import FastAPI, Body
+from fastapi import FastAPI
 import uvicorn
 import numpy as np
 from abc import ABC, abstractmethod
@@ -64,9 +64,14 @@ class ModelWrapper(ABC):
         """Returns a dict of raw model objects."""
         pass
 
-    def deploy(self, **kwargs) -> None:
-        """Deploys the model through a REST API. kwargs are forwarded to uvicorn."""
-        # TODO: Set version here via version arg. Maybe read _version.txt file or 
+    def _create_fastapi(self):
+        """
+        Create a FastAPI app that can be used to deploy the model.
+        
+        This needs to be a separate method from deploy so that the API can be tested 
+        properly.
+        """
+        # TODO: Set version here via version arg. Maybe read _version.txt file or
         #   implement version in __version__.
         app = FastAPI(title="traintool")
         deploy_time = datetime.now()
@@ -84,9 +89,9 @@ class ModelWrapper(ABC):
         @app.post("/predict")
         def predict(predict_request: PredictRequest):
             """Endpoint to classify an image with a deployed model"""
-            
+
             start_time = datetime.now()
-            
+
             # Convert image to numpy array (is list of lists, i.e. what
             # array.tolist() prints out).
             # TODO: Accept image files and paths to images online.
@@ -102,10 +107,15 @@ class ModelWrapper(ABC):
                     result[key] = value.tolist()
                 except AttributeError:
                     pass  # not an array
-                
+
             result["runtime"] = str(datetime.now() - start_time)
             return result
 
+        return app
+
+    def deploy(self, **kwargs) -> None:
+        """Deploys the model through a REST API. kwargs are forwarded to uvicorn."""
+        app = self._create_fastapi()
         uvicorn.run(app, **kwargs)
 
     def __repr__(self):
