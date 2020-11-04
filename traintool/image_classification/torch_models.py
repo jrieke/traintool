@@ -223,9 +223,17 @@ class TorchImageClassificationWrapper(ModelWrapper):
         loss_func = nn.CrossEntropyLoss()
 
         # Dedicate a few images that will be plotted as samples to tensorboard.
-        train_sample_images, train_sample_labels = next(
-            iter(DataLoader(train_data, batch_size=5))
-        )
+        num_samples_to_plot = self.config.get("num_samples_to_plot", 5)
+
+        def get_samples(data):
+            if data is None:
+                return None
+            else:
+                return next(iter(DataLoader(data, batch_size=num_samples_to_plot)))
+
+        train_sample_images, train_sample_labels = get_samples(train_data)
+        val_sample_images, val_sample_labels = get_samples(val_data)
+        test_sample_images, test_sample_labels = get_samples(test_data)
 
         # = [train_data[i] for i in range(min(len(train_data), 5))]
         # train_samples_images = np.asarray(
@@ -272,34 +280,6 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 "train_accuracy", metrics["accuracy"], trainer.state.epoch
             )
 
-            # Plot confusion matrix to tensorboard.
-            # writer.add_figure(
-            #     "confusion-matrix",
-            #     visualization.plot_confusion_matrix(),
-            #     trainer.state.epoch,
-            # )
-
-            # plt.imshow(train_sample_images[1][0])
-            # print(train_sample_labels[1])
-
-            with torch.no_grad():
-                # TODO: What if the number of samples is larger than batch_size?
-                train_sample_output = self.model(train_sample_images)
-                train_sample_pred = torch.softmax(train_sample_output, dim=1).numpy()
-                fig = visualization.plot_samples(
-                    train_sample_images, train_sample_labels, train_sample_pred,
-                )
-                # writer.add_figure(
-                #     "train-samples",
-                #     fig,
-                #     trainer.state.epoch,
-                # )
-                writer.add_image(
-                    "train-samples",
-                    visualization.figure_to_array(fig),
-                    trainer.state.epoch,
-                )
-
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_validation_results(trainer):
             if val_loader:
@@ -341,6 +321,31 @@ class TorchImageClassificationWrapper(ModelWrapper):
             )
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             torch.save(self.model, checkpoint_dir / "model.pt")
+
+        # TODO: Plot confusion matrix.
+
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def plot_samples(trainer):
+            """Plot a few sample images and probabilites to tensorboard."""
+
+            def write_samples_plot(name, sample_images, sample_labels):
+                with torch.no_grad():
+                    sample_output = self.model(sample_images)
+                    sample_pred = torch.softmax(sample_output, dim=1).numpy()
+                fig = visualization.plot_samples(
+                    sample_images, sample_labels, sample_pred,
+                )
+                writer.add_image(
+                    f"{name}-samples",
+                    visualization.figure_to_array(fig),
+                    trainer.state.epoch,
+                )
+
+            write_samples_plot("train", train_sample_images, train_sample_labels)
+            if val_data is not None:
+                write_samples_plot("val", val_sample_images, val_sample_labels)
+            if test_data is not None:
+                write_samples_plot("test", test_sample_images, test_sample_labels)
 
         # Start training.
         max_epochs = 1 if dry_run else self.config.get("epochs", 5)
