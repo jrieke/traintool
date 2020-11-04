@@ -70,7 +70,7 @@ pip install traintool
     traintool.train(..., config={"optimizer": "adam", "lr": 0.1})
     ```
 
-- **Automatic experiment tracking —** traintool automatically calculates metrics and stores them – without requiring you to write any code. You can visualize the results with tensorboard or stream directly to [comet.ml](https://www.comet.ml/).
+- **Automated visualizations & experiment tracking —** traintool automatically calculates metrics and stores them – without requiring you to write any code. You can visualize the results with tensorboard or stream directly to [comet.ml](https://www.comet.ml/).
 
 - **Automatic saving and checkpoints —** traintool automatically stores model checkpoints, logs, and experiment information in an intuitive directory structure. No more worrying about where you've put that one good experiment or which configuration it had. 
 

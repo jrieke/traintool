@@ -48,31 +48,32 @@ def files_image(tmp_path):
 
 
 def test_recognize_data_format(numpy_data, torch_data, files_data):
+    
+    # correct data formats
     assert recognize_data_format(numpy_data) == "numpy"
     assert recognize_data_format(torch_data) == "pytorch-dataset"
     assert recognize_data_format(files_data) == "files"
 
+    # incorrect data formats
     with pytest.raises(ValueError):
         recognize_data_format(None)
-
     with pytest.raises(ValueError):
         recognize_data_format([1, 2, 3])
-
     with pytest.raises(FileNotFoundError):
         recognize_data_format("non/existent/dir/123")
 
 
 def test_recognize_image_format(numpy_image, torch_image, files_image):
 
+    # correct image formats
     assert recognize_image_format(numpy_image) == "numpy"
     assert recognize_image_format(files_image) == "files"
 
+    # incorrect image formats
     with pytest.raises(ValueError):
         recognize_image_format(None)
-
     with pytest.raises(ValueError):
         recognize_image_format([1, 2, 3])
-
     with pytest.raises(FileNotFoundError):
         recognize_image_format("non/existent/file/123")
 
