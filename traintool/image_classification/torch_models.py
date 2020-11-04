@@ -9,9 +9,10 @@ from ignite.engine import Events, create_supervised_trainer, create_supervised_e
 from ignite.metrics import Accuracy, Loss
 import numpy as np
 from loguru import logger
+import matplotlib.pyplot as plt
 
 from ..model_wrapper import ModelWrapper
-from . import preprocessing
+from . import preprocessing, visualization
 from .. import utils
 
 # TODO: This isn't actually used anymore. See if we still need it at some point or it
@@ -221,6 +222,18 @@ class TorchImageClassificationWrapper(ModelWrapper):
         optimizer = self._create_optimizer()
         loss_func = nn.CrossEntropyLoss()
 
+        # Dedicate a few images that will be plotted as samples to tensorboard.
+        train_sample_images, train_sample_labels = next(
+            iter(DataLoader(train_data, batch_size=5))
+        )
+
+        # = [train_data[i] for i in range(min(len(train_data), 5))]
+        # train_samples_images = np.asarray(
+        #     [sample[0] for sample in train_samples]
+        # )
+        # # TODO: What if label is 1D tensor?
+        # train_samples_labels = np.asarray([sample[1] for sample in train_samples])
+
         # Configure trainer and metrics.
         trainer = create_supervised_trainer(
             self.model, optimizer, loss_func, device=device
@@ -258,6 +271,34 @@ class TorchImageClassificationWrapper(ModelWrapper):
             writer.add_scalar(
                 "train_accuracy", metrics["accuracy"], trainer.state.epoch
             )
+
+            # Plot confusion matrix to tensorboard.
+            # writer.add_figure(
+            #     "confusion-matrix",
+            #     visualization.plot_confusion_matrix(),
+            #     trainer.state.epoch,
+            # )
+
+            # plt.imshow(train_sample_images[1][0])
+            # print(train_sample_labels[1])
+
+            with torch.no_grad():
+                # TODO: What if the number of samples is larger than batch_size?
+                train_sample_output = self.model(train_sample_images)
+                train_sample_pred = torch.softmax(train_sample_output, dim=1).numpy()
+                fig = visualization.plot_samples(
+                    train_sample_images, train_sample_labels, train_sample_pred,
+                )
+                # writer.add_figure(
+                #     "train-samples",
+                #     fig,
+                #     trainer.state.epoch,
+                # )
+                writer.add_image(
+                    "train-samples",
+                    visualization.figure_to_array(fig),
+                    trainer.state.epoch,
+                )
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_validation_results(trainer):
