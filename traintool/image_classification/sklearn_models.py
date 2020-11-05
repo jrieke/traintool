@@ -22,7 +22,7 @@ import numpy as np
 from loguru import logger
 
 from ..model_wrapper import ModelWrapper
-from . import preprocessing
+from . import preprocessing, visualization
 
 
 classifier_dict = {
@@ -83,6 +83,7 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         images, labels = data
 
         # Flatten.
+        self._original_image_size = images.shape[1:]
         images = images.reshape(len(images), -1)
 
         # Scale mean and std.
@@ -161,6 +162,29 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             logger.info(f"Test accuracy:\t {test_acc}")
             writer.add_scalar("test_accuracy", test_acc)
             experiment.log_metric("test_accuracy", test_acc)
+
+        # Plot a few samples to tensorboard.
+        num_samples_to_plot = self.config.get("num_samples_to_plot", 5)
+
+        def plot_samples(name, images, labels):
+            num = min(len(images), num_samples_to_plot)
+            # TODO: Save sample images before shuffling train_data, and before
+            #   preprocessing.
+            pred = self.model.predict_proba(images[:num])
+            visualization.plot_samples(
+                writer,
+                name,
+                1,
+                images[:num].reshape(num, *self._original_image_size),
+                labels[:num],
+                pred,
+            )
+
+        plot_samples("train-samples", train_images, train_labels)
+        if val_images is not None:
+            plot_samples("val-samples", val_images, val_labels)
+        if test_images is not None:
+            plot_samples("test-samples", test_images, test_labels)
 
         # Save model.
         self._save()

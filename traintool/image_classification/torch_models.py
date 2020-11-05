@@ -340,15 +340,15 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 #   so the plotted images will differ from run to run.
                 with torch.no_grad():
                     sample_output = self.model(sample_images)
-                    sample_pred = torch.softmax(sample_output, dim=1).numpy()
+                    sample_pred = torch.softmax(sample_output, dim=1)
 
                 visualization.plot_samples(
                     writer,
                     f"{name}-samples",
                     trainer.state.epoch,
-                    sample_images,
-                    sample_labels,
-                    sample_pred,
+                    sample_images.numpy(),
+                    sample_labels.numpy(),
+                    sample_pred.numpy(),
                 )
 
             write_samples_plot("train", train_sample_images, train_sample_labels)

@@ -28,6 +28,7 @@ def plot_samples(
     """Plot a few sample images and classification results to tensorboard."""
     num_samples = len(images)
     num_classes = predictions.shape[1]
+    #print(num_samples)
 
     fig, axes = plt.subplots(2, num_samples, figsize=(10, 3))
     # fig.suptitle("Samples and probabilites from train_data. Red is ground truth.")
@@ -36,14 +37,18 @@ def plot_samples(
     for i, ax in enumerate(axes[0]):
         plt.sca(ax)
         plt.axis("off")
-        # TODO: Allow RGB (needs channels-last I think).
-        plt.imshow(images[i][0], cmap="gray")
+        if images.shape[1] == 1:  # grayscale
+            plt.imshow(images[i][0], cmap="gray")
+        elif images.shape[1] == 3:  # RGB
+            plt.imshow(images[i].transpose(1, 2, 0))
+        else:
+            raise RuntimeError()
 
     # Plot predictions in bar charts.
     for i, ax in enumerate(axes[1]):
         plt.sca(ax)
         bars = ax.bar(np.arange(num_classes), predictions[i], zorder=3)
-        bars[labels[i]].set_color("red")
+        bars[int(labels[i])].set_color("red")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
@@ -57,7 +62,7 @@ def plot_samples(
         if i == 0:
             ax.set_ylabel("Probability")
         ax.set_ylim(0, 1)
-        ax.get_xticklabels()[labels[i]].set_color("red")
+        ax.get_xticklabels()[int(labels[i])].set_color("red")
 
     # Add common x label by drawing above the figure.
     fig.add_subplot(111, frameon=False)
