@@ -71,32 +71,42 @@ class SklearnImageClassificationWrapper(ModelWrapper):
     #     images = self.scaler.transform(images)
     #     return images
 
-    def _preprocess_for_training(self, data, is_train: bool = False):
+    def _preprocess_for_training(self, name, data):
         """Preprocess a dataset with images and labels for use in training."""
 
-        # Return for empty val/test data.
-        if data is None:
+        if data is None:  # val/test can be empty´
+            logger.info(f"{name}: Not given")
             return None, None
+        else:
+            # Convert format.
+            # TODO: Print original file format.
+            data = preprocessing.to_numpy(data, resize=28, crop=28)
+            images, labels = data
 
-        # Convert format.
-        data = preprocessing.to_numpy(data, resize=28, crop=28)
-        images, labels = data
+            # Describe dataset.
+            num_classes = len(np.unique(labels))
+            num_features = images.reshape(len(images), -1).shape[1]
+            logger.info(f"{name}:")
+            logger.info(f"    samples: {len(images)}")
+            logger.info(f"    image shape: {images.shape[1:]}")
+            logger.info(f"    features: {num_features}")
+            logger.info(f"    classes: {num_classes}")
 
-        # Flatten.
-        self._original_image_size = images.shape[1:]
-        images = images.reshape(len(images), -1)
+            # Flatten.
+            self._original_image_size = images.shape[1:]
+            images = images.reshape(len(images), -1)
 
-        # Scale mean and std.
-        # TODO: Maybe make mean and std as config parameters here.
-        if is_train:
-            self.scaler = sklearn.preprocessing.StandardScaler().fit(images)
-        images = self.scaler.transform(images)
+            # Scale mean and std.
+            # TODO: Maybe make mean and std as config parameters here.
+            if name == "train":
+                self.scaler = sklearn.preprocessing.StandardScaler().fit(images)
+            images = self.scaler.transform(images)
 
-        # Shuffle train set.
-        if is_train:
-            images, labels = shuffle(images, labels)
+            # Shuffle train set.
+            if name == "train":
+                images, labels = shuffle(images, labels)
 
-        return images, labels
+            return images, labels
 
     def _train(
         self,
@@ -109,29 +119,11 @@ class SklearnImageClassificationWrapper(ModelWrapper):
     ) -> None:
         """Trains the model, evaluates it on val/test data and saves it to file."""
 
-        # Preprocess all datasets.
+        # Preprocess all datasets and log some stats about them.
         logger.info("Preprocessing datasets...")
-        train_images, train_labels = self._preprocess_for_training(
-            train_data, is_train=True
-        )
-        val_images, val_labels = self._preprocess_for_training(val_data)
-        test_images, test_labels = self._preprocess_for_training(test_data)
-
-        # Print some information about datasets.
-        # TODO: Maybe move this to preprocessing.py.
-        # TODO: Describe datasets before they are processed.
-        def describe_dataset(name, images, labels):
-            if images is None:
-                logger.info(f"{name} data:".ljust(20) + "Not given")
-            else:
-                logger.info(
-                    f"{name} data:".ljust(20)
-                    + f"{len(images)} samples, {images.shape[1]} features"
-                )
-
-        describe_dataset("Train", train_images, train_labels)
-        describe_dataset("Val", val_images, val_labels)
-        describe_dataset("Test", test_images, test_labels)
+        train_images, train_labels = self._preprocess_for_training("train", train_data)
+        val_images, val_labels = self._preprocess_for_training("val", val_data)
+        test_images, test_labels = self._preprocess_for_training("test", test_data)
         logger.info("")
 
         # Create and fit model.
