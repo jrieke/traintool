@@ -9,8 +9,7 @@
 </p>
 <p align="center">
     <a href="https://pypi.org/project/traintool/"><img src="https://img.shields.io/badge/Python-3.6%2B-blue"></a>
-    <a href="https://github.com/jrieke/traintool/actions"><img src="https://github.com/jrieke/traintool/workflows/build/badge.svg" alt="build"></a>
-    <a href="https://traintool.jrieke.com"><img src="https://github.com/jrieke/traintool/workflows/docs/badge.svg" alt="docs"></a>
+    <a href="https://github.com/jrieke/traintool/actions"><img src="https://github.com/jrieke/traintool/workflows/tests/badge.svg" alt="tests"></a>
     <a href="https://codecov.io/gh/jrieke/traintool"><img src="https://codecov.io/gh/jrieke/traintool/branch/master/graph/badge.svg?token=NVH72ZXX8Z" alt="codecov"/></a>
     <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
 </p>
