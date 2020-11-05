@@ -79,32 +79,32 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             return None, None
         else:
             # Convert format.
-            # TODO: Print original file format.
+            logger.info(f"{name}:")
+            logger.info(f"    data format: {preprocessing.recognize_data_format(data)}")
             data = preprocessing.to_numpy(data, resize=28, crop=28)
             images, labels = data
 
             # Describe dataset.
             num_classes = len(np.unique(labels))
-            num_features = images.reshape(len(images), -1).shape[1]
-            logger.info(f"{name}:")
             logger.info(f"    samples: {len(images)}")
             logger.info(f"    image shape: {images.shape[1:]}")
-            logger.info(f"    features: {num_features}")
             logger.info(f"    classes: {num_classes}")
 
             # Flatten.
             self._original_image_size = images.shape[1:]
             images = images.reshape(len(images), -1)
+            logger.info(f"    flattened images (to {images.shape[1]} features)")
 
             # Scale mean and std.
-            # TODO: Maybe make mean and std as config parameters here.
             if name == "train":
                 self.scaler = sklearn.preprocessing.StandardScaler().fit(images)
             images = self.scaler.transform(images)
+            logger.info("    scaled to mean 0, std 1 (based on train set)")
 
             # Shuffle train set.
             if name == "train":
                 images, labels = shuffle(images, labels)
+                logger.info("    shuffled")
 
             return images, labels
 
@@ -126,20 +126,35 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         test_images, test_labels = self._preprocess_for_training("test", test_data)
         logger.info("")
 
-        # Create and fit model.
+        # Create the model.
         logger.info("Creating model...")
         self._create_model()
-        logger.info("Training model... (this may take a while)")
-        self.model.fit(train_images, train_labels)
-        logger.info("Training finished!")
         logger.info("")
+
+        # Train the model
+        if "num_samples" in self.config:
+            logger.info(
+                f"Training model... (using {self.config['num_samples']} of "
+                f"{len(train_images)} samples)"
+            )
+            self.model.fit(
+                train_images[: self.config["num_samples"]],
+                train_labels[: self.config["num_samples"]],
+            )
+        else:
+            logger.info("Training model...")
+            logger.info(
+                "(if this takes too long, train on less data with the config "
+                "parameter 'num_samples')"
+            )
+            self.model.fit(train_images, train_labels)
 
         # Evaluate and log accuracy on all datasets.
         def log_accuracy(name, images, labels):
             if images is None:
                 return
             acc = self.model.score(images, labels)
-            logger.info(f"{name.capitalize()} accuracy:".ljust(20) + str(acc))
+            logger.info(f"{name.capitalize()} accuracy:".ljust(18) + str(acc))
             writer.add_scalar(f"{name}_accuracy", acc)
             experiment.log_metric(f"{name}_accuracy", acc)
 
