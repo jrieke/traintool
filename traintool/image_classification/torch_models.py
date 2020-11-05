@@ -10,10 +10,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torchvision
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
-from ignite.metrics import Accuracy, Loss
+from ignite.metrics import Accuracy, Loss, ConfusionMatrix
 import numpy as np
 from loguru import logger
-import matplotlib.pyplot as plt
 
 from ..model_wrapper import ModelWrapper
 from . import preprocessing, visualization
@@ -250,7 +249,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
         trainer = create_supervised_trainer(
             self.model, optimizer, loss_func, device=device
         )
-        val_metrics = {"accuracy": Accuracy(), "loss": Loss(loss_func)}
+        val_metrics = {
+            "accuracy": Accuracy(),
+            "loss": Loss(loss_func),
+            # "confusion_matrix": ConfusionMatrix(num_classes),
+        }
         evaluator = create_supervised_evaluator(
             self.model, metrics=val_metrics, device=device
         )
@@ -326,23 +329,26 @@ class TorchImageClassificationWrapper(ModelWrapper):
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             torch.save(self.model, checkpoint_dir / "model.pt")
 
-        # TODO: Plot confusion matrix.
-
         @trainer.on(Events.EPOCH_COMPLETED)
         def plot_samples(trainer):
             """Plot a few sample images and probabilites to tensorboard."""
 
             def write_samples_plot(name, sample_images, sample_labels):
+                # TODO: This can be improved by just using the outputs already
+                #   calculated in evaluator.state.output in the functions above.
+                #   Problem: At least in the train evaluator, the batches are not equal,
+                #   so the plotted images will differ from run to run.
                 with torch.no_grad():
                     sample_output = self.model(sample_images)
                     sample_pred = torch.softmax(sample_output, dim=1).numpy()
-                fig = visualization.plot_samples(
-                    sample_images, sample_labels, sample_pred,
-                )
-                writer.add_image(
+
+                visualization.plot_samples(
+                    writer,
                     f"{name}-samples",
-                    visualization.figure_to_array(fig),
                     trainer.state.epoch,
+                    sample_images,
+                    sample_labels,
+                    sample_pred,
                 )
 
             write_samples_plot("train", train_sample_images, train_sample_labels)

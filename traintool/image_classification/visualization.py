@@ -7,20 +7,25 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import io
+from tensorboardX import SummaryWriter
 
 
-def plot_confusion_matrix() -> mpl.figure.Figure:
+def plot_confusion_matrix(writer: SummaryWriter, name: str, epoch: int) -> None:
     """Plot confusion matrix to tensorboard."""
     fig = plt.figure()
     plt.plot([1, 3, 2])
-    # writer.add_figure("confusion-matrix", plt.gcf(), epoch)
-    return fig
+    writer.add_image(name, figure_to_array(fig), epoch)
 
 
 def plot_samples(
-    images: np.ndarray, labels: np.ndarray, predictions: np.ndarray,
-) -> mpl.figure.Figure:
-    """Plot a few sample images and classification results."""
+    writer: SummaryWriter,
+    name: str,
+    epoch: int,
+    images: np.ndarray,
+    labels: np.ndarray,
+    predictions: np.ndarray,
+) -> None:
+    """Plot a few sample images and classification results to tensorboard."""
     num_samples = len(images)
     num_classes = predictions.shape[1]
 
@@ -59,7 +64,7 @@ def plot_samples(
     plt.tick_params(labelcolor="none", top=False, bottom=False, left=False, right=False)
     plt.xlabel("Class (red = ground truth)")
 
-    return fig
+    writer.add_image(name, figure_to_array(fig), epoch)
 
 
 def figure_to_array(fig):
