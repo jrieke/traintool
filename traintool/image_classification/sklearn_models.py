@@ -117,23 +117,21 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         val_images, val_labels = self._preprocess_for_training(val_data)
         test_images, test_labels = self._preprocess_for_training(test_data)
 
-        # TODO: Refactor this.
-        logger.info(
-            f"Train data: {len(train_images)} samples, {train_images.shape[1]} features"
-        )
-        if val_data is None:
-            logger.info("Val data:   Not given")
-        else:
-            logger.info(
-                f"Val data:   {len(val_images)} samples, {val_images.shape[1]} features"
-            )
-        if test_data is None:
-            logger.info("Test data:  Not given")
-        else:
-            logger.info(
-                f"Test data:  {len(test_images)} samples, {test_images.shape[1]} "
-                "features"
-            )
+        # Print some information about datasets.
+        # TODO: Maybe move this to preprocessing.py.
+        # TODO: Describe datasets before they are processed.
+        def describe_dataset(name, images, labels):
+            if images is None:
+                logger.info(f"{name} data:".ljust(20) + "Not given")
+            else:
+                logger.info(
+                    f"{name} data:".ljust(20)
+                    + f"{len(images)} samples, {images.shape[1]} features"
+                )
+
+        describe_dataset("Train", train_images, train_labels)
+        describe_dataset("Val", val_images, val_labels)
+        describe_dataset("Test", test_images, test_labels)
         logger.info("")
 
         # Create and fit model.
@@ -144,47 +142,37 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         logger.info("Training finished!")
         logger.info("")
 
-        # Evaluate accuracy on all datasets and log to experiment.
-        train_acc = self.model.score(train_images, train_labels)
-        # TODO: Maybe refactor this so I don't have to call similar functions 3 times.
-        # TODO: Remove tabs here, they interfere with loguru's file saving (and are
-        #   ugly).
-        logger.info(f"Train accuracy:\t {train_acc}")
-        writer.add_scalar("train_accuracy", train_acc)
-        experiment.log_metric("train_accuracy", train_acc)
-        if val_data is not None:
-            val_acc = self.model.score(val_images, val_labels)
-            logger.info(f"Val accuracy:\t {val_acc}")
-            writer.add_scalar("val_accuracy", val_acc)
-            experiment.log_metric("val_accuracy", val_acc)
-        if test_data is not None:
-            test_acc = self.model.score(test_images, test_labels)
-            logger.info(f"Test accuracy:\t {test_acc}")
-            writer.add_scalar("test_accuracy", test_acc)
-            experiment.log_metric("test_accuracy", test_acc)
+        # Evaluate and log accuracy on all datasets.
+        def log_accuracy(name, images, labels):
+            if images is None:
+                return
+            acc = self.model.score(images, labels)
+            logger.info(f"{name.capitalize()} accuracy:".ljust(20) + str(acc))
+            writer.add_scalar(f"{name}_accuracy", acc)
+            experiment.log_metric(f"{name}_accuracy", acc)
 
-        # Plot a few samples to tensorboard.
+        log_accuracy("train", train_images, train_labels)
+        log_accuracy("val", val_images, val_labels)
+        log_accuracy("test", test_images, test_labels)
+
+        # Plot a few samples from each dataset to tensorboard.
         num_samples_to_plot = self.config.get("num_samples_to_plot", 5)
 
         def plot_samples(name, images, labels):
+            if images is None:
+                return
             num = min(len(images), num_samples_to_plot)
+            pred = self.model.predict_proba(images[:num])
             # TODO: Save sample images before shuffling train_data, and before
             #   preprocessing.
-            pred = self.model.predict_proba(images[:num])
+            original_images = images[:num].reshape(num, *self._original_image_size)
             visualization.plot_samples(
-                writer,
-                name,
-                1,
-                images[:num].reshape(num, *self._original_image_size),
-                labels[:num],
-                pred,
+                writer, name, 1, original_images, labels[:num], pred,
             )
 
         plot_samples("train-samples", train_images, train_labels)
-        if val_images is not None:
-            plot_samples("val-samples", val_images, val_labels)
-        if test_images is not None:
-            plot_samples("test-samples", test_images, test_labels)
+        plot_samples("val-samples", val_images, val_labels)
+        plot_samples("test-samples", test_images, test_labels)
 
         # Save model.
         self._save()
