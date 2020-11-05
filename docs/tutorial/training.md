@@ -17,11 +17,11 @@ test_data = [mnist.test_images(), mnist.test_labels()]
     The code above loads the data as numpy arrays but traintool can also deal with 
     files and pytorch datasets (see here). More data formats will be added soon.
 
-Training the SVM is very simple now:
+Training the SVM classifier is very simple now:
 
 ```python
 import traintool
-svm = traintool.train("svm", train_data=train_data, test_data=test_data)
+svc = traintool.train("svc", train_data=train_data, test_data=test_data)
 ```
 
 That's it! traintool will take care of reading and converting the data, applying some 
@@ -36,7 +36,7 @@ Of course, you can do predictions with the trained model. Let's run it on an ima
 the test set:
 
 ```python
-pred = svm.predict(test_data[0][0])
+pred = svc.predict(test_data[0][0])
 print("Predicted:", pred["predicted_class"], " - Is:", test_data[1][0])
 ```
 
@@ -158,7 +158,7 @@ Train a [Support Vector Machine](https://en.wikipedia.org/wiki/Support_vector_ma
 
 ```python
 import traintool
-svm = traintool.train("svm", train_data=train_data, test_data=test_data)
+svc = traintool.train("svc", train_data=train_data, test_data=test_data)
 ```
 
 Or train a [Residual Network](https://arxiv.org/abs/1512.03385):
@@ -177,7 +177,7 @@ makes it super easy to compare different models.
 Run an image from the test set through the model:
 
 ```python
-pred = svm.predict(test_data[0][0])
+pred = svc.predict(test_data[0][0])
 print("Predicted:", pred["predicted_class"], " - Is:", test_data[1][0])
 ```
 

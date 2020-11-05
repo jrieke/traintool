@@ -61,7 +61,7 @@ pip install traintool
 - **Pre-implemented models —** traintool offers fully implemented and tested models – from simple classifiers to deep neural networks. The alpha version supports image classification only but we will add more models soon. Here are only a few of the models you can use:
 
     ```python
-    "svm", "random-forest", "alexnet", "resnet50", "inception_v3", ...
+    "svc", "random-forest", "alexnet", "resnet50", "inception_v3", ...
     ```
 
 - **Easy, yet fully customizable —** You can customize every aspect of the model training and hyperparameters. Simply pass along a config dictionary:
@@ -113,8 +113,8 @@ import traintool
 train_data = [mnist.train_images(), mnist.train_labels()]
 test_data = [mnist.test_images(), mnist.test_labels()]
 
-# Train SVM
-svm = traintool.train("svm", train_data=train_data, test_data=test_data)
+# Train SVM classifier
+svc = traintool.train("svc", train_data=train_data, test_data=test_data)
 
 # Train ResNet with custom hyperparameters & track metrics to tensorboard
 config = {"lr": 0.1, "optimizer": "adam"}
