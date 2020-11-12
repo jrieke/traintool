@@ -227,7 +227,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         val_loader = self._preprocess_for_training("val", val_data, use_cuda)
         test_loader = self._preprocess_for_training("test", test_data, use_cuda)
         logger.info("")
-        
+
         # Set up model and move it to device.
         logger.info("Creating model...")
         self._create_model(self.num_classes)
@@ -334,7 +334,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def checkpoint_model(trainer):
-            # TODO: Do not checkpoint at every step. 
+            # TODO: Do not checkpoint at every step.
             checkpoint_dir = (
                 self.out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
             )
@@ -350,32 +350,31 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 #   calculated in evaluator.state.output in the functions above.
                 #   Problem: At least in the train evaluator, the batches are not equal,
                 #   so the plotted images will differ from run to run.
+                if sample_images is None:
+                    return
+
                 with torch.no_grad():
-                    sample_output = self.model(sample_images)
+                    sample_output = self.model(sample_images.to(device))
                     sample_pred = torch.softmax(sample_output, dim=1)
 
                 visualization.plot_samples(
                     writer,
                     f"{name}-samples",
                     trainer.state.epoch,
-                    sample_images.numpy(),
-                    sample_labels.numpy(),
-                    sample_pred.numpy(),
+                    sample_images.to("cpu").numpy(),
+                    sample_labels.to("cpu").numpy(),
+                    sample_pred.to("cpu").numpy(),
                 )
 
             write_samples_plot("train", train_sample_images, train_sample_labels)
-            if val_data is not None:
-                write_samples_plot("val", val_sample_images, val_sample_labels)
-            if test_data is not None:
-                write_samples_plot("test", test_sample_images, test_sample_labels)
+            write_samples_plot("val", val_sample_images, val_sample_labels)
+            write_samples_plot("test", test_sample_images, test_sample_labels)
 
         # Start training.
         num_epochs = 1 if dry_run else self.config.get("num_epochs", 5)
         epoch_length = 1 if dry_run else None
         logger.info(f"Training model on device {device}...")
-        logger.info(
-            "(show more steps by setting the config parameter 'print_every')"
-        )
+        logger.info("(show more steps by setting the config parameter 'print_every')")
         logger.info("")
         trainer.run(train_loader, max_epochs=num_epochs, epoch_length=epoch_length)
         logger.info("Training finished!")
