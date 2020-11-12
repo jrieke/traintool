@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torchvision
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
-from ignite.metrics import Accuracy, Loss, ConfusionMatrix
+from ignite.metrics import Accuracy, Loss
 import numpy as np
 from loguru import logger
 
@@ -122,38 +122,92 @@ class TorchImageClassificationWrapper(ModelWrapper):
         """Create the optimizer based on the config"""
         model_params = self.model.parameters()
         optimizer_name = self.config.get("optimizer", "adam")
+        logger.info(f"    optimizer: {optimizer_name}")
         if optimizer_name == "adam":
             kwargs = utils.filter_dict(
                 self.config, ["lr", "betas", "eps", "weight_decay", "amsgrad"]
             )
+            logger.info(f"    optimizer args: {kwargs}")
             return optim.Adadelta(model_params, **kwargs)
         elif optimizer_name == "adadelta":
             kwargs = utils.filter_dict(
                 self.config, ["lr", "rho", "eps", "weight_decay"]
             )
+            logger.info(f"    optimizer args: {kwargs}")
             return optim.Adadelta(model_params, **kwargs)
         elif optimizer_name == "adagrad":
             kwargs = utils.filter_dict(
                 self.config,
                 ["lr", "lr_decay", "weight_decay", "initial_accumulator_value", "eps"],
             )
+            logger.info(f"    optimizer args: {kwargs}")
             return optim.Adagrad(model_params, **kwargs)
         elif optimizer_name == "rmsprop":
             kwargs = utils.filter_dict(
                 self.config,
                 ["lr", "alpha", "eps", "weight_decay", "momentum", "centered"],
             )
+            logger.info(f"    optimizer args: {kwargs}")
             return optim.RMSprop(model_params, **kwargs)
         elif optimizer_name == "sgd":
             kwargs = utils.filter_dict(
                 self.config, ["momentum", "dampening", "weight_decay", "nesterov"]
             )
+            logger.info(f"    optimizer args: {kwargs}")
             # In contrast to other optimizers, lr is a required param for SGD.
             return optim.SGD(model_params, lr=self.config.get("lr", 0.1), **kwargs)
         else:
             raise ValueError(f"Optimizer not known: {optimizer_name}")
 
         # TODO: Implement other optimizers.
+
+    def _preprocess_for_training(self, name, data, use_cuda=False):
+        if data is None:  # val/test can be empty´
+            logger.info(f"{name}: Not given")
+            return None
+        else:
+            logger.info(f"{name}:")
+
+            # Get number of classes from config or infer from train_data (needs to be
+            # done before the conversion!).
+            if "num_classes" in self.config:
+                self.num_classes = self.config["num_classes"]
+            elif name == "train":
+                self.num_classes = preprocessing.get_num_classes(data)
+
+            # Convert format.
+            logger.info(f"    data format: {preprocessing.recognize_data_format(data)}")
+            # TODO: Properly do mean/std normalization.
+            # TODO: Give error if resize/crop are in config (we always need these values
+            #   here!).
+            data = preprocessing.to_torch(
+                data,
+                resize=256,
+                crop=224,
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            )
+            logger.info(f"    resized to 256 x 256")
+            logger.info(f"    center-cropped to 224 x 224")
+            logger.info(f"    samples: {len(data)}")
+            logger.info(f"    image shape: {tuple(data[0][0].shape)}")
+
+            # TODO: Either write num classes for each dataset here or
+            # TODO: Raise error if num_classes diverges between datasets.
+            logger.info(f"    classes: {self.num_classes}")
+
+            # Wrap in data loader.
+            batch_size = self.config.get("batch_size", 128)
+            kwargs = {"batch_size": batch_size}
+            logger.info(f"    batch size: {batch_size}")
+            if use_cuda:
+                kwargs["pin_memory"] = True
+                kwargs["num_workers"] = 1
+            if name == "train":
+                kwargs["shuffle"] = True
+                logger.info(f"    shuffled")
+            loader = DataLoader(data, **kwargs)
+            return loader
 
     def _train(
         self,
@@ -167,83 +221,37 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         use_cuda = torch.cuda.is_available()
 
-        logger.info("Preprocessing datasets...")
-        # Get number of classes from config or infer from train_data.
-        if "num_classes" in self.config:
-            num_classes = self.config["num_classes"]
-        else:
-            num_classes = preprocessing.get_num_classes(train_data)
-
         # Preprocess all datasets.
-        # TODO: mean and std normalization applies only to pretrained models. But
-        #   doesn't this also make sense for not-pretrained? Or should I scale to mean
-        #   0 and std 1 here? See also the code here:
-        #   https://pytorch.org/docs/stable/torchvision/models.html
-        train_data = preprocessing.to_torch(
-            train_data,
-            resize=256,
-            crop=224,
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225],
-        )
-        val_data = preprocessing.to_torch(
-            train_data,
-            resize=256,
-            crop=224,
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225],
-        )
-        test_data = preprocessing.to_torch(
-            train_data,
-            resize=256,
-            crop=224,
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225],
-        )
-        # TODO: Maybe print some more stuff about the data.
-        logger.info(f"Train data: {len(train_data)} samples")
-        val_desc = "Not given" if val_data is None else f"{len(val_data)} samples"
-        logger.info(f"Val data:   {val_desc}")
-        test_desc = "Not given" if test_data is None else f"{len(test_data)} samples"
-        logger.info(f"Test data:  {test_desc}")
-        logger.info(f"Found {num_classes} different classes")
+        logger.info("Preprocessing datasets...")
+        train_loader = self._preprocess_for_training("train", train_data, use_cuda)
+        val_loader = self._preprocess_for_training("val", val_data, use_cuda)
+        test_loader = self._preprocess_for_training("test", test_data, use_cuda)
         logger.info("")
-
-        kwargs = {"batch_size": self.config.get("batch_size", 128)}
-        if use_cuda:
-            kwargs["pin_memory"] = True
-            kwargs["num_workers"] = 1
-
-        train_loader = DataLoader(train_data, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_data, **kwargs) if val_data is not None else None
-        test_loader = DataLoader(test_data, **kwargs) if test_data is not None else None
-
+        
         # Set up model, optimizer, loss.
         logger.info("Creating model...")
         device = torch.device("cuda" if use_cuda else "cpu")
-        self._create_model(num_classes)
+        logger.info(f"    device: {device}")
+        self._create_model(self.num_classes)
         optimizer = self._create_optimizer()
         loss_func = nn.CrossEntropyLoss()
+        logger.info(f"    loss function: cross-entropy")
+        logger.info("")
 
         # Dedicate a few images that will be plotted as samples to tensorboard.
         num_samples_to_plot = self.config.get("num_samples_to_plot", 5)
 
-        def get_samples(data):
-            if data is None:
-                return None
+        def get_samples(loader):
+            if loader is None:
+                return None, None
             else:
-                return next(iter(DataLoader(data, batch_size=num_samples_to_plot)))
+                return next(
+                    iter(DataLoader(loader.dataset, batch_size=num_samples_to_plot))
+                )
 
-        train_sample_images, train_sample_labels = get_samples(train_data)
-        val_sample_images, val_sample_labels = get_samples(val_data)
-        test_sample_images, test_sample_labels = get_samples(test_data)
-
-        # = [train_data[i] for i in range(min(len(train_data), 5))]
-        # train_samples_images = np.asarray(
-        #     [sample[0] for sample in train_samples]
-        # )
-        # # TODO: What if label is 1D tensor?
-        # train_samples_labels = np.asarray([sample[1] for sample in train_samples])
+        train_sample_images, train_sample_labels = get_samples(train_loader)
+        val_sample_images, val_sample_labels = get_samples(val_loader)
+        test_sample_images, test_sample_labels = get_samples(test_loader)
 
         # Configure trainer and metrics.
         trainer = create_supervised_trainer(
@@ -264,7 +272,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         def log_training_loss(trainer):
             batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
             logger.info(
-                f"Epoch {trainer.state.epoch}, "
+                f"Epoch {trainer.state.epoch} / {num_epochs}, "
                 f"batch {batch} / {trainer.state.epoch_length}: "
                 f"Loss: {trainer.state.output:.3f}"
             )
@@ -275,10 +283,11 @@ class TorchImageClassificationWrapper(ModelWrapper):
         def log_training_results(trainer):
             evaluator.run(train_loader)
             metrics = evaluator.state.metrics
+            logger.info("")
+            logger.info(f"Epoch {trainer.state.epoch} / {num_epochs} results: ")
             logger.info(
-                f"Training results - Epoch: {trainer.state.epoch}  "
-                f"Avg accuracy: {metrics['accuracy']:.3f} "
-                f"Avg loss: {metrics['loss']:.3f}"
+                f"Train: Average loss: {metrics['loss']:.3f}, "
+                f"Average accuracy: {metrics['accuracy']:.3f}"
             )
             experiment.log_metric("train_loss", metrics["loss"])
             experiment.log_metric("train_accuracy", metrics["accuracy"])
@@ -293,9 +302,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 evaluator.run(val_loader)
                 metrics = evaluator.state.metrics
                 logger.info(
-                    f"Validation results - Epoch: {trainer.state.epoch} "
-                    f"Avg accuracy: {metrics['accuracy']:.3f} "
-                    f"Avg loss: {metrics['loss']:.3f}"
+                    f"Val:   Average loss: {metrics['loss']:.3f}, "
+                    f"Average accuracy: {metrics['accuracy']:.3f}"
                 )
                 experiment.log_metric("val_loss", metrics["loss"])
                 experiment.log_metric("val_accuracy", metrics["accuracy"])
@@ -310,10 +318,10 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 evaluator.run(test_loader)
                 metrics = evaluator.state.metrics
                 logger.info(
-                    f"Test results - Epoch: {trainer.state.epoch} "
-                    f"Avg accuracy: {metrics['accuracy']:.3f} "
-                    f"Avg loss: {metrics['loss']:.3f}"
+                    f"Test:  Average loss: {metrics['loss']:.3f}, "
+                    f"Average accuracy: {metrics['accuracy']:.3f}"
                 )
+                logger.info("")
                 experiment.log_metric("test_loss", metrics["loss"])
                 experiment.log_metric("test_accuracy", metrics["accuracy"])
                 writer.add_scalar("test_loss", metrics["loss"], trainer.state.epoch)
@@ -323,6 +331,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def checkpoint_model(trainer):
+            # TODO: Do not checkpoint at every step. 
             checkpoint_dir = (
                 self.out_dir / "checkpoints" / f"epoch{trainer.state.epoch}"
             )
@@ -358,10 +367,14 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 write_samples_plot("test", test_sample_images, test_sample_labels)
 
         # Start training.
-        max_epochs = 1 if dry_run else self.config.get("epochs", 5)
+        num_epochs = 1 if dry_run else self.config.get("num_epochs", 5)
         epoch_length = 1 if dry_run else None
-        logger.info(f"Training model on device {device}... (this may take a while)")
-        trainer.run(train_loader, max_epochs=max_epochs, epoch_length=epoch_length)
+        logger.info(f"Training model on device {device}...")
+        logger.info(
+            "(show more steps by setting the config parameter 'print_every')"
+        )
+        logger.info("")
+        trainer.run(train_loader, max_epochs=num_epochs, epoch_length=epoch_length)
         logger.info("Training finished!")
 
         # Save the trained model.

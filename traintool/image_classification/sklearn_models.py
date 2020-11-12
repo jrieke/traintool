@@ -81,13 +81,16 @@ class SklearnImageClassificationWrapper(ModelWrapper):
             # Convert format.
             logger.info(f"{name}:")
             logger.info(f"    data format: {preprocessing.recognize_data_format(data)}")
+            # TODO: Properly resize numpy arrays. 
             data = preprocessing.to_numpy(data, resize=28, crop=28)
             images, labels = data
-
-            # Describe dataset.
-            num_classes = len(np.unique(labels))
             logger.info(f"    samples: {len(images)}")
             logger.info(f"    image shape: {images.shape[1:]}")
+            
+            # Get number of classes.
+            # TODO: Raise error if num_classes diverges between datasets. 
+            # TODO: Raise error if num_classes config param is given.
+            num_classes = len(np.unique(labels))
             logger.info(f"    classes: {num_classes}")
 
             # Flatten.

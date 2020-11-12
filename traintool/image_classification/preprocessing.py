@@ -317,4 +317,4 @@ def get_num_classes(data) -> int:
         dataset = datasets.ImageFolder(data)
         return len(dataset.targets)
     else:
-        RuntimeError()
+        raise RuntimeError()
