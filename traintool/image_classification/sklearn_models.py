@@ -50,8 +50,12 @@ class SklearnImageClassificationWrapper(ModelWrapper):
 
     def _create_model(self) -> None:
         """Create the model based on self.model_name and store it in self.model."""
-        # TODO: If there's anything else stored in config besides the classifier params,
-        #   remove it here.
+        
+        # All config params not used anywhere else are passed on to the sklearn model.
+        model_config = self.config.copy()
+        model_config.pop("num_samples", None)
+        model_config.pop("num_samples_to_plot", None)
+        
         # Some models need probability=True so that we can predict the probability
         # further down.
         try:
