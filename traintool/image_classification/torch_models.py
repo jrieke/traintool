@@ -228,11 +228,14 @@ class TorchImageClassificationWrapper(ModelWrapper):
         test_loader = self._preprocess_for_training("test", test_data, use_cuda)
         logger.info("")
         
-        # Set up model, optimizer, loss.
+        # Set up model and move it to device.
         logger.info("Creating model...")
+        self._create_model(self.num_classes)
         device = torch.device("cuda" if use_cuda else "cpu")
         logger.info(f"    device: {device}")
-        self._create_model(self.num_classes)
+        self.model = self.model.to(device)
+
+        # Set up optimizer and loss.
         optimizer = self._create_optimizer()
         loss_func = nn.CrossEntropyLoss()
         logger.info(f"    loss function: cross-entropy")
