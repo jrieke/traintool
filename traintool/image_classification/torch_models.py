@@ -354,11 +354,20 @@ class TorchImageClassificationWrapper(ModelWrapper):
 
         # Start training.
         num_epochs = 1 if dry_run else self.config.get("num_epochs", 5)
-        epoch_length = 1 if dry_run else None
+        if dry_run:
+            num_batches = 1
+        elif "num_samples" in self.config:
+            # TODO: Make sure batch_size doesn't differ from the value extracted above.
+            batch_size = self.config.get("batch_size", 128)
+            # TODO: This always uses a few more samples than num_samples. Maybe get it
+            #   to the correct value.
+            num_batches = int(self.config["num_samples"] / batch_size) + 1
+        else:
+            num_batches = None  # all batches
         logger.info(f"Training model on device {device}...")
         logger.info("(show more steps by setting the config parameter 'print_every')")
         logger.info("")
-        trainer.run(train_loader, max_epochs=num_epochs, epoch_length=epoch_length)
+        trainer.run(train_loader, max_epochs=num_epochs, epoch_length=num_batches)
         logger.info("Training finished!")
 
         # Save the trained model.
