@@ -272,7 +272,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         @trainer.on(
             Events.ITERATION_COMPLETED(every=self.config.get("print_every", 100))
         )
-        def log_training_loss(trainer):
+        def log_batch(trainer):
             batch = (trainer.state.iteration - 1) % trainer.state.epoch_length + 1
             logger.info(
                 f"Epoch {trainer.state.epoch} / {num_epochs}, "
@@ -280,57 +280,39 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 f"Loss: {trainer.state.output:.3f}"
             )
 
+        def log_results(name, metrics, epoch):
+            """Log results of an epoch to stdout, tensorboard and comet."""
+            logger.info(
+                f"{name}: Average loss: {metrics['loss']:.3f}, "
+                f"Average accuracy: {metrics['accuracy']:.3f}"
+            )
+            experiment.log_metric(f"{name}_loss", metrics["loss"])
+            experiment.log_metric(f"{name}_accuracy", metrics["accuracy"])
+            writer.add_scalar(f"{name}_loss", metrics["loss"], epoch)
+            writer.add_scalar(f"{name}_accuracy", metrics["accuracy"], epoch)
+
         # TODO: This iterates over complete train set again, maybe accumulate as in the
         #   example in the footnote here: https://pytorch.org/ignite/quickstart.html#
         @trainer.on(Events.EPOCH_COMPLETED)
-        def log_training_results(trainer):
-            evaluator.run(train_loader)
-            metrics = evaluator.state.metrics
+        def log_epoch(trainer):
             logger.info("")
             logger.info(f"Epoch {trainer.state.epoch} / {num_epochs} results: ")
-            logger.info(
-                f"Train: Average loss: {metrics['loss']:.3f}, "
-                f"Average accuracy: {metrics['accuracy']:.3f}"
-            )
-            experiment.log_metric("train_loss", metrics["loss"])
-            experiment.log_metric("train_accuracy", metrics["accuracy"])
-            writer.add_scalar("train_loss", metrics["loss"], trainer.state.epoch)
-            writer.add_scalar(
-                "train_accuracy", metrics["accuracy"], trainer.state.epoch
-            )
 
-        @trainer.on(Events.EPOCH_COMPLETED)
-        def log_validation_results(trainer):
+            # Train data.
+            evaluator.run(train_loader)
+            log_results("train", evaluator.state.metrics, trainer.state.epoch)
+
+            # Val data.
             if val_loader:
                 evaluator.run(val_loader)
-                metrics = evaluator.state.metrics
-                logger.info(
-                    f"Val:   Average loss: {metrics['loss']:.3f}, "
-                    f"Average accuracy: {metrics['accuracy']:.3f}"
-                )
-                experiment.log_metric("val_loss", metrics["loss"])
-                experiment.log_metric("val_accuracy", metrics["accuracy"])
-                writer.add_scalar("val_loss", metrics["loss"], trainer.state.epoch)
-                writer.add_scalar(
-                    "val_accuracy", metrics["accuracy"], trainer.state.epoch
-                )
+                log_results("val", evaluator.state.metrics, trainer.state.epoch)
 
-        @trainer.on(Events.EPOCH_COMPLETED)
-        def log_test_results(trainer):
+            # Test data.
             if test_loader:
                 evaluator.run(test_loader)
-                metrics = evaluator.state.metrics
-                logger.info(
-                    f"Test:  Average loss: {metrics['loss']:.3f}, "
-                    f"Average accuracy: {metrics['accuracy']:.3f}"
-                )
-                logger.info("")
-                experiment.log_metric("test_loss", metrics["loss"])
-                experiment.log_metric("test_accuracy", metrics["accuracy"])
-                writer.add_scalar("test_loss", metrics["loss"], trainer.state.epoch)
-                writer.add_scalar(
-                    "test_accuracy", metrics["accuracy"], trainer.state.epoch
-                )
+                log_results("test", evaluator.state.metrics, trainer.state.epoch)
+
+            logger.info("")
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def checkpoint_model(trainer):
