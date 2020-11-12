@@ -60,10 +60,10 @@ class SklearnImageClassificationWrapper(ModelWrapper):
         # further down.
         try:
             self.model = classifier_dict[self.model_name](
-                probability=True, **self.config
+                probability=True, **model_config
             )
         except TypeError:  # no probability arg
-            self.model = classifier_dict[self.model_name](**self.config)
+            self.model = classifier_dict[self.model_name](**model_config)
 
     # def _preprocess_for_prediction(self, images: np.ndarray):
     #     """Preprocess images for use in training and prediction."""
