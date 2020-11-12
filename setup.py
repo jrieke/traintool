@@ -40,6 +40,7 @@ setup(
         "imageio",
         "loguru",
         "editdistance",
+        "mnist",
     ],
     entry_points="""""",
     classifiers=[
