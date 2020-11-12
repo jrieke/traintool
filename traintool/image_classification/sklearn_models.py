@@ -140,8 +140,11 @@ class SklearnImageClassificationWrapper(ModelWrapper):
 
         # Train the model
         if dry_run:
-            logger.info(f"Training model... (DRY RUN, only 1 sample)")
-            self.model.fit(train_images[:1], train_labels[:1])
+            # TODO: Ideally, this should only use one sample, but then there are errors
+            #   further down (specifically when plotting samples) because there's only 
+            #   one class present in the training data.
+            logger.info(f"Training model... (DRY RUN, only 100 samples)")
+            self.model.fit(train_images[:100], train_labels[:100])
         elif "num_samples" in self.config:
             logger.info(
                 f"Training model... (using {self.config['num_samples']} of "
