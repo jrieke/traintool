@@ -257,6 +257,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
         test_sample_images, test_sample_labels = get_samples(test_loader)
 
         # Configure trainer and metrics.
+        accumulate_train_metrics = self.config.get("accumulate_train_metrics", True)
 
         # We need to transform the output of the trainer and metrics here to accumulate
         # metrics during training (otherwise, we have to re-evaluate on the complete
@@ -279,14 +280,16 @@ class TorchImageClassificationWrapper(ModelWrapper):
             device=device,
             output_transform=trainer_output_transform,
         )
-        train_metrics = {
-            "accuracy": Accuracy(output_transform=metrics_output_transform),
-            "loss": Loss(loss_func, output_transform=metrics_output_transform),
-            # "confusion_matrix": ConfusionMatrix(num_classes),
-        }
-        for name, metric in train_metrics.items():
-            # Attach metrics to trainer to accumulate them during training.
-            metric.attach(trainer, name)
+        if accumulate_train_metrics:
+            # TODO: Maybe put train_metrics and val_metrics into one dict.
+            train_metrics = {
+                "accuracy": Accuracy(output_transform=metrics_output_transform),
+                "loss": Loss(loss_func, output_transform=metrics_output_transform),
+                # "confusion_matrix": ConfusionMatrix(num_classes),
+            }
+            for name, metric in train_metrics.items():
+                # Attach metrics to trainer to accumulate them during training.
+                metric.attach(trainer, name)
         val_metrics = {
             "accuracy": Accuracy(),
             "loss": Loss(loss_func),
@@ -327,9 +330,14 @@ class TorchImageClassificationWrapper(ModelWrapper):
             logger.info(f"Epoch {trainer.state.epoch} / {num_epochs} results: ")
 
             # Train data.
-            evaluator.run(train_loader)
-            log_results("train_evaluated", evaluator.state.metrics, trainer.state.epoch)
-            log_results("train_accumulated", trainer.state.metrics, trainer.state.epoch)
+            if accumulate_train_metrics:
+                log_results("train", trainer.state.metrics, trainer.state.epoch)
+                log.info("    (train metrics are accumulated during training; "
+                         "to re-evaluate on the complete train set after training, "
+                         "use config parameter 'accumulate_train_metrics': False)"
+            else:
+                evaluator.run(train_loader)
+                log_results("train", evaluator.state.metrics, trainer.state.epoch)
 
             # Val data.
             if val_loader:
