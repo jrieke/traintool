@@ -33,6 +33,9 @@ def plot_samples(
     fig, axes = plt.subplots(2, num_samples, figsize=(10, 3))
     # fig.suptitle("Samples and probabilites from train_data. Red is ground truth.")
 
+    # Scale images to [0, 1] (they may have another range for classification).
+    images = (images - np.min(images)) / np.ptp(images)
+
     # Plot images.
     for i, ax in enumerate(axes[0]):
         plt.sca(ax)
