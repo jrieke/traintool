@@ -277,16 +277,16 @@ class TorchImageClassificationWrapper(ModelWrapper):
             optimizer,
             loss_func,
             device=device,
-            output_transform=trainer_output_transform,
+            # output_transform=trainer_output_transform,
         )
-        train_metrics = {
-            "accuracy": Accuracy(output_transform=metrics_output_transform),
-            "loss": Loss(loss_func, output_transform=metrics_output_transform),
-            # "confusion_matrix": ConfusionMatrix(num_classes),
-        }
-        for name, metric in train_metrics.items():
-            # Attach metrics to trainer to accumulate them during training.
-            metric.attach(trainer, name)
+        # train_metrics = {
+        #     "accuracy": Accuracy(output_transform=metrics_output_transform),
+        #     "loss": Loss(loss_func, output_transform=metrics_output_transform),
+        #     # "confusion_matrix": ConfusionMatrix(num_classes),
+        # }
+        # for name, metric in train_metrics.items():
+        #     # Attach metrics to trainer to accumulate them during training.
+        #     metric.attach(trainer, name)
         val_metrics = {
             "accuracy": Accuracy(),
             "loss": Loss(loss_func),
@@ -304,7 +304,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
             logger.info(
                 f"Epoch {trainer.state.epoch} / {num_epochs}, "
                 f"batch {batch} / {trainer.state.epoch_length}: "
-                f"Loss: {trainer.state.output[2]:.3f}"
+                # f"Loss: {trainer.state.output[2]:.3f}"
+                f"Loss: {trainer.state.output:.3f}"
             )
 
         def log_results(name, metrics, epoch):
@@ -326,8 +327,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
             logger.info(f"Epoch {trainer.state.epoch} / {num_epochs} results: ")
 
             # Train data.
-            # evaluator.run(train_loader)
-            log_results("train", trainer.state.metrics, trainer.state.epoch)
+            evaluator.run(train_loader)
+            log_results("train", evaluator.state.metrics, trainer.state.epoch)
+            # log_results("train", trainer.state.metrics, trainer.state.epoch)
 
             # Val data.
             if val_loader:
