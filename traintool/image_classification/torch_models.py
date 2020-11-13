@@ -332,9 +332,9 @@ class TorchImageClassificationWrapper(ModelWrapper):
             # Train data.
             if accumulate_train_metrics:
                 log_results("train", trainer.state.metrics, trainer.state.epoch)
-                log.info("    (train metrics are accumulated during training; "
-                         "to re-evaluate on the complete train set after training, "
-                         "use config parameter 'accumulate_train_metrics': False)"
+                logger.info("    (train metrics are accumulated during training; "
+                            "to re-evaluate on the complete train set after training, "
+                            "use config parameter 'accumulate_train_metrics': False)")
             else:
                 evaluator.run(train_loader)
                 log_results("train", evaluator.state.metrics, trainer.state.epoch)
