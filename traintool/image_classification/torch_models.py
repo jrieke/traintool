@@ -257,9 +257,36 @@ class TorchImageClassificationWrapper(ModelWrapper):
         test_sample_images, test_sample_labels = get_samples(test_loader)
 
         # Configure trainer and metrics.
+        
+        # We need to transform the output of the trainer and metrics here to accumulate 
+        # metrics during training (otherwise, we have to re-evaluate on the complete 
+        # train set which takes a long time). By default, the trainer outputs 
+        # `loss.item()` and the metrics expect `y_pred, y` (which is what the evaluator 
+        # outputs). We are now outputting `y_pred, y, loss` from the trainer and then 
+        # slicing off the `loss` before it goes into the metric. 
+        # See also the footnote here but note that it's a bit wrong: 
+        # https://pytorch.org/ignite/quickstart.html#
+        def trainer_output_transform(x, y, y_pred, loss):
+            return y_pred, y, loss.item()
+
+        def metrics_output_transform(output):
+            return output[:2]  # use only y_pred, y
+
         trainer = create_supervised_trainer(
-            self.model, optimizer, loss_func, device=device
+            self.model,
+            optimizer,
+            loss_func,
+            device=device,
+            output_transform=trainer_output_transform,
         )
+        train_metrics = {
+            "accuracy": Accuracy(output_transform=metrics_output_transform),
+            "loss": Loss(loss_func, output_transform=metrics_output_transform),
+            # "confusion_matrix": ConfusionMatrix(num_classes),
+        }
+        for name, metric in train_metrics.items():
+            # Attach metrics to trainer to accumulate them during training.
+            metric.attach(trainer, name)
         val_metrics = {
             "accuracy": Accuracy(),
             "loss": Loss(loss_func),
@@ -277,7 +304,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             logger.info(
                 f"Epoch {trainer.state.epoch} / {num_epochs}, "
                 f"batch {batch} / {trainer.state.epoch_length}: "
-                f"Loss: {trainer.state.output:.3f}"
+                f"Loss: {trainer.state.output[2]:.3f}"
             )
 
         def log_results(name, metrics, epoch):
@@ -299,8 +326,8 @@ class TorchImageClassificationWrapper(ModelWrapper):
             logger.info(f"Epoch {trainer.state.epoch} / {num_epochs} results: ")
 
             # Train data.
-            evaluator.run(train_loader)
-            log_results("train", evaluator.state.metrics, trainer.state.epoch)
+            # evaluator.run(train_loader)
+            log_results("train", trainer.state.metrics, trainer.state.epoch)
 
             # Val data.
             if val_loader:
@@ -358,7 +385,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
             num_batches = 1
             logger.info(f"Training model on device {device}... (DRY RUN, only 1 batch)")
         elif "num_samples" in self.config:
-            # TODO: Make sure batch_size doesn't differ from the value extracted during 
+            # TODO: Make sure batch_size doesn't differ from the value extracted during
             #   preprocessing.
             batch_size = self.config.get("batch_size", 128)
             # TODO: This always uses a few more samples than num_samples. Maybe get it
