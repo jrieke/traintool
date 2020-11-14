@@ -89,8 +89,8 @@ plugins:
 #   #- pdf-export
 
 # ## Custom theme additions
-# extra_javascript:
-#         - 'stylesheets/extra.js'
+extra_javascript:
+  - "stylesheets/extra.js"
 # extra_css:
 #   - stylesheets/extra.css
 
