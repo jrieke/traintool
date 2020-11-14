@@ -1,10 +1,12 @@
+# version 6.0 gives error with mkdocs-jupyter
+nbconvert==5.6.1
 mkdocs
 mkdocs-material
 #pygments
 pymdown-extensions
 mkdocs-autolinks-plugin
 #mkdocs-table-reader-plugin
-#mkdocs-jupyter
+mkdocs-jupyter
 #mkdocs-exclude
 #mkdocs-click
 #mkdocstrings

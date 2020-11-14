@@ -1,7 +1,7 @@
 ## Project information
 site_name: traintool
 site_author: Johannes Rieke
-site_description: Python library for off-the-shelf machine learning models
+site_description: Machine learning in one line of code
 site_url: https://traintool.jrieke.com/
 
 ## Repository
@@ -24,17 +24,16 @@ extra:
 ## Page tree
 nav:
   - About: index.md
-  - Tutorial: 
-    - tutorial/intro.md
-    - tutorial/training.md
-    - tutorial/experiment-tracking.md
-    - tutorial/deployment.md
-    - tutorial/raw-models.md
+  - Tutorial:
+      - tutorial/quickstart.ipynb
+      - tutorial/training.md
+      - tutorial/experiment-tracking.md
+      - tutorial/deployment.md
+      - tutorial/raw-models.md
   - Tasks and Models:
-    - models/image-classification.md
-    - models/object-detection.md
-    - models/text-classification.md
-
+      - models/image-classification.md
+      - models/object-detection.md
+      - models/text-classification.md
 
 ## Configuration
 theme:
@@ -44,15 +43,15 @@ theme:
   palette:
     primary: blue
     accent: deep purple
-#   custom_dir: docs/theme_override_home/
-#   # 404 page
-#   static_templates:
-#     - 404.html
-#   # Don't include MkDocs' JavaScript
-#   include_search_page: false
-#   search_index_only: true
-#   # Default values, taken from mkdocs_theme.yml
-#   language: en
+  #   custom_dir: docs/theme_override_home/
+  #   # 404 page
+  #   static_templates:
+  #     - 404.html
+  #   # Don't include MkDocs' JavaScript
+  #   include_search_page: false
+  #   search_index_only: true
+  #   # Default values, taken from mkdocs_theme.yml
+  #   language: en
   features:
     - tabs
     - instant
@@ -61,6 +60,9 @@ theme:
 plugins:
   - search
   - autolinks
+  - mknotebooks:
+      enable_default_jupyter_cell_styling: false
+  #- mkdocs-jupyter
 #   #- table-reader
 #   #- mkdocs-jupyter
 #   # - exclude:
@@ -90,14 +92,14 @@ plugins:
 # extra_javascript:
 #         - 'stylesheets/extra.js'
 # extra_css:
-#         - stylesheets/extra.css
+#   - stylesheets/extra.css
 
 ## Extensions
 markdown_extensions:
   - markdown.extensions.admonition
   - markdown.extensions.attr_list
   - markdown.extensions.codehilite:
-      guess_lang: false
+      guess_lang: true # required for mknotebooks
   - markdown.extensions.def_list
   - markdown.extensions.footnotes
   - markdown.extensions.meta
@@ -111,7 +113,7 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.emoji
   - pymdownx.highlight:
-      linenums_style: pymdownx-inline
+      linenums_style: pymdownx.inline
   - pymdownx.inlinehilite
   - pymdownx.keys
   - pymdownx.magiclink
@@ -119,12 +121,11 @@ markdown_extensions:
   - pymdownx.smartsymbols
   - pymdownx.snippets:
       check_paths: true
-  - pymdownx.superfences
+  # - pymdownx.superfences  # prevents syntax highlighting in mknotebooks
   - pymdownx.tabbed
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
   - pymdownx.tabbed
   # - mkdocs-click
-
 # #google_analytics:
