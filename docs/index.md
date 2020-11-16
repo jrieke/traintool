@@ -27,8 +27,8 @@
 
 ---
 
-traintool is a Python library for **applied machine learning** (ML). It allows you to train 
-off-the-shelf ML models with minimum code: Just give your data and 
+traintool is a Python library for **applied machine learning**. It allows you to train 
+off-the-shelf machine learning models with minimum code: Just give your data and 
 the model name, and traintool takes care of the rest. It has **pre-implemented models** 
 for major use cases, works with different data formats and integrates 
 automatic **visualizations**, **experiment tracking**, and **deployment**. 
