@@ -11,13 +11,9 @@
 -->
 
 <p align="center">
-    <em>Machine learning in one line of code</em>
+    <em>Train off-the-shelf machine learning models in one line of code</em>
 </p>
-<!--
-<p align="center">
-    <b><a href="https://traintool.jrieke.com/">Documentation</a> • <a href="https://github.com/jrieke/traintool">Github</a> • <a href="mailto:johannes.rieke@gmail.com">Contact</a></b>
-</p>
--->
+
 <p align="center">
     <a href="https://pypi.org/project/traintool/"><img src="https://img.shields.io/badge/Python-3.6%2B-blue"></a>
     <a href="https://github.com/jrieke/traintool/actions"><img src="https://github.com/jrieke/traintool/workflows/tests/badge.svg" alt="tests"></a>
@@ -25,6 +21,9 @@
     <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
 </p>
 
+<p align="center">
+    <b><a href="https://traintool.jrieke.com/">Try it out in Google Colab</a> • <a href="https://traintool.jrieke.com/">Documentation</a></b>
+</p>
 
 ---
 
@@ -34,11 +33,19 @@ the model name, and traintool takes care of the rest. It has **pre-implemented m
 for major use cases, works with different data formats and integrates 
 automatic **visualizations**, **experiment tracking**, and **deployment**. 
 
-<br>
+
+<sup>Alpha Release: traintool is in an early alpha release. The API can and will change 
+without notice. If you find a bug, please file an issue on 
+[Github](https://github.com/jrieke/traintool) or 
+[write me](mailto:johannes.rieke@gmail.com).</sup>
+
+
+
+<!-- <br>
 <p align="center">
     <b><a href="https://colab.research.google.com/github/jrieke/traintool/blob/master/docs/tutorial/quickstart.ipynb" style="padding: 10px; margin-right: 10px; color: white; background-color: #4892EC; border: 2px solid #4892EC; border-radius: 10px;">Try it out in Google Colab</a></b>
     <b><a href="https://colab.research.google.com/github/jrieke/traintool/blob/master/docs/tutorial/quickstart.ipynb" style="padding: 10px; border: 2px solid #4892EC; border-radius: 10px;">View Docs</a></b>
-</p>
+</p> -->
 
 <!--
 
@@ -105,13 +112,6 @@ Features & design principles:
 
 ## Installation
 
-
-!!! warning "Alpha Release"
-    traintool is in an early alpha release. The API can and will change 
-    without notice. If you find a bug, please file an issue on 
-    [Github](https://github.com/jrieke/traintool) or [write me](mailto:johannes.rieke@gmail.com).
-
-
 ```bash
 pip install traintool
 ```
@@ -149,7 +149,7 @@ pytorch_model = resnet.raw()["model"]
 ```
 
 For more information, check out the 
-[complete tutorial](https://traintool.jrieke.com/tutorial/quickstart/):
+[complete tutorial](https://traintool.jrieke.com/tutorial/quickstart/).
 
 
 ## Get in touch!
