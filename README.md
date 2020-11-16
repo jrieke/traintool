@@ -1,12 +1,23 @@
 <p align="center">
     <img src="docs/assets/cover.png" alt="traintool">
 </p>
+
+<!--
 <p align="center">
-    <em>Train off-the-shelf machine learning models with one line of code</em>
+    <a href="example.com" style="color: white; padding: 15px; border-radius: 10px; margin-right: 10px; box-shadow: 2px 2px 5px 0px rgba(150,150,150,1); background: rgb(120,88,188); background: linear-gradient(327deg, rgba(120,88,188,1) 0%, rgba(72,146,236,1) 100%);">Try it out</a>
+    <a href="example.com" style="color: white; background-color: #7858BC; padding: 15px; border-radius: 10px; box-shadow: 2px 2px 5px 0px rgba(150,150,150,1);">Documentation</a>
 </p>
+<br>
+-->
+
+<p align="center">
+    <em>Machine learning in one line of code</em>
+</p>
+<!--
 <p align="center">
     <b><a href="https://traintool.jrieke.com/">Documentation</a> • <a href="https://github.com/jrieke/traintool">Github</a> • <a href="mailto:johannes.rieke@gmail.com">Contact</a></b>
 </p>
+-->
 <p align="center">
     <a href="https://pypi.org/project/traintool/"><img src="https://img.shields.io/badge/Python-3.6%2B-blue"></a>
     <a href="https://github.com/jrieke/traintool/actions"><img src="https://github.com/jrieke/traintool/workflows/tests/badge.svg" alt="tests"></a>
@@ -14,24 +25,22 @@
     <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
 </p>
 
+
 ---
 
-traintool is a Python library for **applied machine learning**. It allows you to train 
-off-the-shelf models with minimum code: You just give your data and say which model you 
-want to train, and traintool takes care of the rest. It has **pre-implemented models** 
-for most major use cases, works with different data formats and follows best practices 
-for **experiment tracking** and **deployment**. 
+traintool is a Python library for **applied machine learning** (ML). It allows you to train 
+off-the-shelf ML models with minimum code: Just give your data and 
+the model name, and traintool takes care of the rest. It has **pre-implemented models** 
+for major use cases, works with different data formats and integrates 
+automatic **visualizations**, **experiment tracking**, and **deployment**. 
 
-<sup>Alpha Release: Note that traintool is in an early alpha release. The API can and will change 
-without notice. If you find a bug, please file an issue on [Github](https://github.com/jrieke/traintool) 
-or [write me](mailto:johannes.rieke@gmail.com).</sup>
+<br>
+<p align="center">
+    <b><a href="https://colab.research.google.com/github/jrieke/traintool/blob/master/docs/tutorial/quickstart.ipynb" style="padding: 10px; margin-right: 10px; color: white; background-color: #4892EC; border: 2px solid #4892EC; border-radius: 10px;">Try it out in Google Colab</a></b>
+    <b><a href="https://colab.research.google.com/github/jrieke/traintool/blob/master/docs/tutorial/quickstart.ipynb" style="padding: 10px; border: 2px solid #4892EC; border-radius: 10px;">View Docs</a></b>
+</p>
 
-
-## Installation
-
-```bash
-pip install traintool
-```
+<!--
 
 ## Is traintool for you?
 
@@ -48,46 +57,38 @@ pip install traintool
 - need to customize every aspect of your model, e.g. in basic research
 - want to chase state of the art
 
+-->
+
 
 ## Features
 
-- **Minimum coding —** traintool is designed from the ground up to require as few lines of code as possible. It offers a sleek and intuitive interface that gets you started in seconds. Training a model just takes a single line:
+- **Minimum coding —** traintool is designed to require as few lines of code as 
+possible. It offers a sleek and intuitive interface that gets you started in seconds. 
+Training a model just takes a single line:
 
-    ```python
-    traintool.train("resnet18", train_data, test_data)
-    ```
-
-- **Pre-implemented models —** traintool offers fully implemented and tested models – from simple classifiers to deep neural networks. The alpha version supports image classification only but we will add more models soon. Here are only a few of the models you can use:
-
-    ```python
-    "svc", "random-forest", "alexnet", "resnet50", "inception_v3", ...
-    ```
-
-- **Easy, yet fully customizable —** You can customize every aspect of the model training and hyperparameters. Simply pass along a config dictionary:
-
-    ```python
-    traintool.train(..., config={"optimizer": "adam", "lr": 0.1})
-    ```
-
-- **Automated visualizations & experiment tracking —** traintool automatically calculates metrics and stores them – without requiring you to write any code. You can visualize the results with tensorboard or stream directly to [comet.ml](https://www.comet.ml/).
-
-- **Automatic saving and checkpoints —** traintool automatically stores model checkpoints, logs, and experiment information in an intuitive directory structure. No more worrying about where you've put that one good experiment or which configuration it had. 
-
-- **Works with multiple data formats —** traintool understands numpy arrays, pytorch datasets, or files and automatically converts them to the correct format for the model you train. 
-
-- **Instant deployment —** You can deploy your model with one line of code to a REST API that you can query from anywhere. Just call:
-
-    ```python
-    model.deploy()
-    ```
-
-- **Built on popular ML libraries —** Under the hood, traintool uses common open-source frameworks like pytorch, tensorflow, and scikit-learn. You can always access the raw models from these frameworks if you want to do more complex analysis:
-
-    ```python
-    torch_model = model.raw()["model"]
-    ```
+        traintool.train("resnet18", train_data, test_data, config={"optimizer": "adam", "lr": 0.1})
 
 
+- **Pre-implemented models —** The heart of traintool are fully implemented and tested 
+models – from simple classifiers to deep neural networks; built on sklearn, pytorch, 
+or tensorflow. Here are only a few of the models you can use:
+
+        "svc", "random-forest", "alexnet", "resnet50", "inception_v3", ...
+
+- **Automatic visualizations & experiment tracking —** traintool automatically 
+calculates metrics, creates beautiful visualizations (in 
+[tensorboard](https://www.tensorflow.org/tensorboard) or 
+[comet.ml](https://www.comet.ml/)), and stores experiment data and 
+model checkpoints – without needing a single additional line of code. 
+
+- **Ready for your data —** traintool understands numpy arrays, pytorch datasets, 
+and files. It automatically converts and preprocesses everything based on the model you 
+use.
+
+- **Instant deployment —** In one line of code, you can deploy your model to a REST 
+API that you can query from anywhere. Just call:
+
+        model.deploy()
 
 
 <!--
@@ -102,37 +103,53 @@ Features & design principles:
 
 
 
+## Installation
+
+
+!!! warning "Alpha Release"
+    traintool is in an early alpha release. The API can and will change 
+    without notice. If you find a bug, please file an issue on 
+    [Github](https://github.com/jrieke/traintool) or [write me](mailto:johannes.rieke@gmail.com).
+
+
+```bash
+pip install traintool
+```
+
 ## Example: Image classification on MNIST
+
+Run this example interactively in Google Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jrieke/traintool/blob/master/docs/tutorial/quickstart.ipynb)
 
 ```python
 import mnist
 import traintool
 
-# Load MNIST data as numpy arrays (also works with torch/tensorflow datasets, files, ...)
+# Load MNIST data as numpy
 train_data = [mnist.train_images(), mnist.train_labels()]
 test_data = [mnist.test_images(), mnist.test_labels()]
 
 # Train SVM classifier
 svc = traintool.train("svc", train_data=train_data, test_data=test_data)
 
-# Train ResNet with custom hyperparameters & track metrics to tensorboard
-config = {"lr": 0.1, "optimizer": "adam"}
+# Train ResNet with custom hyperparameters
 resnet = traintool.train("resnet", train_data=train_data, test_data=test_data, 
-                         config=config, tensorboard=True)
+                         config={"lr": 0.1, "optimizer": "adam"})
 
 # Make prediction
 result = resnet.predict(test_data[0][0])
 print(result["predicted_class"])
 
-# Deploy to REST API (with fastapi)
+# Deploy to REST API
 resnet.deploy()
 
 # Get underlying pytorch model (e.g. for custom analysis)
 pytorch_model = resnet.raw()["model"]
 ```
 
-Interested? Have a look at the [tutorial](https://traintool.jrieke.com/tutorial/) or check 
-out available [models](https://traintool.jrieke.com/models/).
+For more information, check out the 
+[complete tutorial](https://traintool.jrieke.com/tutorial/quickstart/):
 
 
 ## Get in touch!
