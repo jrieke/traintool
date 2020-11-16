@@ -30,8 +30,9 @@
 traintool is a Python library for **applied machine learning**. It allows you to train 
 off-the-shelf machine learning models with minimum code: Just give your data and 
 the model name, and traintool takes care of the rest. It has **pre-implemented models** 
-for major use cases, works with different data formats and integrates 
-automatic **visualizations**, **experiment tracking**, and **deployment**. 
+for major use cases (built on scikit-learn and pytorch), works with different data 
+formats and integrates automatic **visualizations**, **experiment tracking**, and 
+**deployment**. 
 
 
 <sup>Alpha Release: traintool is in an early alpha release. The API can and will change 
