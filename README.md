@@ -67,6 +67,13 @@ without notice. If you find a bug, please file an issue on
 -->
 
 
+## Installation
+
+```bash
+pip install traintool
+```
+
+
 ## Features
 
 - **Minimum coding —** traintool is designed to require as few lines of code as 
@@ -110,11 +117,6 @@ Features & design principles:
 
 
 
-## Installation
-
-```bash
-pip install traintool
-```
 
 ## Example: Image classification on MNIST
 

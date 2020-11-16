@@ -67,6 +67,14 @@ automatic **visualizations**, **experiment tracking**, and **deployment**.
 -->
 
 
+## Installation
+
+```bash
+pip install traintool
+```
+
+
+
 ## Features
 
 - **Minimum coding —** traintool is designed to require as few lines of code as 
@@ -108,13 +116,6 @@ Features & design principles:
 - access to raw models from sklearn/pytorch/tensorflow
 -->
 
-
-
-## Installation
-
-```bash
-pip install traintool
-```
 
 ## Example: Image classification on MNIST
 
