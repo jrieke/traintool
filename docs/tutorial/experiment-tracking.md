@@ -20,8 +20,6 @@ INSERT IMAGE HERE
 
 On the bottom left, you can select all the different runs (same names as the directories in `traintool-experiments`), on the right side you can view the metrics. 
 
-If you want to disable tensorboard logging for a run, use `traintool.train(..., tensorboard=False)`.
-
 
 
 ## Comet.ml

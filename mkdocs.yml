@@ -24,16 +24,19 @@ extra:
 ## Page tree
 nav:
   - About: index.md
-  - Tutorial:
-      - tutorial/quickstart.ipynb
-      - tutorial/training.md
-      - tutorial/experiment-tracking.md
-      - tutorial/deployment.md
-      - tutorial/raw-models.md
-  - Tasks and Models:
-      - models/image-classification.md
-      - models/object-detection.md
-      - models/text-classification.md
+  - Quickstart: tutorial/quickstart.ipynb
+  # - Tutorial:
+  #     - tutorial/quickstart.ipynb
+  #     - tutorial/training.md
+  #     - tutorial/experiment-tracking.md
+  #     - tutorial/deployment.md
+  #     - tutorial/raw-models.md
+  - Image Classification: models/image-classification.md
+  - Deployment: tutorial/deployment.md
+  # - Tasks and Models:
+  #     - models/image-classification.md
+  #     - models/object-detection.md
+  #     - models/text-classification.md
 
 ## Configuration
 theme:

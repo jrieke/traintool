@@ -1,11 +1,12 @@
-# Getting access to raw models
+# Accessing raw models
 
-traintool gives you full access to the raw models it uses under the hood (e.g. from 
-sklearn or pytorch). Just call:
+traintool is built on top of powerful machine learning libraries like scikit-learn or p
+ytorch. After training, it gives you full access to the raw models with: 
 
 ```python
-sklearn_model = model.raw()["model"]
+model.raw()
 ```
 
-In some cases, the dictionary returned by `model.raw()` might also contain some other 
-objects, e.g. data scalers.
+This returns a dict of all underlying model objects. It usually contains the model 
+itself (`model.raw()["model"]`) but might also contain some other 
+objects, e.g. data scalers (`model.raw()["scaler"]`).
