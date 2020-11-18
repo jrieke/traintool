@@ -81,14 +81,17 @@ pip install traintool
 possible. It offers a sleek and intuitive interface that gets you started in seconds. 
 Training a model just takes a single line:
 
-        traintool.train("resnet18", train_data, test_data, config={"optimizer": "adam", "lr": 0.1})
-
+    ```python
+    traintool.train("resnet18", train_data, test_data, config={"optimizer": "adam", "lr": 0.1})
+    ```
 
 - **Pre-implemented models —** The heart of traintool are fully implemented and tested 
 models – from simple classifiers to deep neural networks; built on sklearn, pytorch, 
 or tensorflow. Here are only a few of the models you can use:
 
-        "svc", "random-forest", "alexnet", "resnet50", "inception_v3", ...
+    ```python
+    "svc", "random-forest", "alexnet", "resnet50", "inception_v3", ...
+    ```
 
 - **Automatic visualizations & experiment tracking —** traintool automatically 
 calculates metrics, creates beautiful visualizations (in 
@@ -103,7 +106,9 @@ use.
 - **Instant deployment —** In one line of code, you can deploy your model to a REST 
 API that you can query from anywhere. Just call:
 
-        model.deploy()
+    ```python
+    model.deploy()
+    ```
 
 
 <!--
