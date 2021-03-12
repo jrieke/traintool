@@ -1,0 +1,676 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Machine learning in one line of code">
+      
+      
+      
+        <meta name="author" content="Johannes Rieke">
+      
+      
+        <link rel="canonical" href="https://traintool.jrieke.com/models/image-classification/">
+      
+      <link rel="shortcut icon" href="../../assets/favicon.ico">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.0.5">
+    
+    
+      
+        <title>Image Classification - traintool</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.77f3fd56.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.7fa14f5b.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#2094f3">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../css/ansi-colours.css">
+    
+      <link rel="stylesheet" href="../../css/pandas-dataframe.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue" data-md-color-accent="deep-purple">
+      
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#image-classification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="https://traintool.jrieke.com/" title="traintool" class="md-header__button md-logo" aria-label="traintool">
+      
+  <img src="../../assets/logo-white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            traintool
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Image Classification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="md-header__options">
+      
+    </div>
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/jrieke/traintool/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://traintool.jrieke.com/" title="traintool" class="md-nav__button md-logo" aria-label="traintool">
+      
+  <img src="../../assets/logo-white.png" alt="logo">
+
+    </a>
+    traintool
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/jrieke/traintool/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/quickstart/" class="md-nav__link">
+        Quickstart
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Image Classification
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Image Classification
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#input-formats" class="md-nav__link">
+    Input formats
+  </a>
+  
+    <nav class="md-nav" aria-label="Input formats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numpy-arrays" class="md-nav__link">
+    Numpy arrays
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    Files
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scikit-learn-models" class="md-nav__link">
+    Scikit-learn models
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pytorch-models" class="md-nav__link">
+    PyTorch models
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/deployment/" class="md-nav__link">
+        Deployment
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#input-formats" class="md-nav__link">
+    Input formats
+  </a>
+  
+    <nav class="md-nav" aria-label="Input formats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numpy-arrays" class="md-nav__link">
+    Numpy arrays
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    Files
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scikit-learn-models" class="md-nav__link">
+    Scikit-learn models
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pytorch-models" class="md-nav__link">
+    PyTorch models
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/jrieke/traintool/edit/master/docs/models/image-classification.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="image-classification">Image classification<a class="headerlink" href="#image-classification" title="Permanent link">&para;</a></h1>
+<p><img alt="" src="https://devopedia.org/images/article/172/7316.1561043304.png" /></p>
+<p>Image classification models classify an image into one out of several categories or 
+classes, based on the image content (e.g. "cat" or "dog"). </p>
+<h2 id="input-formats">Input formats<a class="headerlink" href="#input-formats" title="Permanent link">&para;</a></h2>
+<h3 id="numpy-arrays">Numpy arrays<a class="headerlink" href="#numpy-arrays" title="Permanent link">&para;</a></h3>
+<p>Each data set should be a list of two elements: The first element is a numpy array 
+of all images of shape <code>(number of images, color channels (1 or 3), height, width)</code>. The second 
+element is an array of labels (as integer indices).</p>
+<p>Example:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">train_images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>  <span class="c1"># 32 images with 3 color channels and size 256x256</span>
+<span class="n">train_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="n">traintool</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">train_data</span><span class="o">=</span><span class="p">[</span><span class="n">train_images</span><span class="p">,</span> <span class="n">train_labels</span><span class="p">])</span>
+</code></pre></div>
+
+<!--
+### Pytorch datasets
+
+Each element of the dataset should be a tuple: The first element is a torch tensor of 
+the image of size `(color channels, width, height)`. The second element is the label as 
+integer. All [datasets from torchvision](https://pytorch.org/docs/stable/torchvision/datasets.html) 
+are compatible to this format. 
+-->
+
+<h3 id="files">Files<a class="headerlink" href="#files" title="Permanent link">&para;</a></h3>
+<p>Image files should be arranged in one folder per class, similar to this:</p>
+<div class="codehilite"><pre><span></span><code>train
++-- dogs
+|   +-- funny-dog.jpg
+|   +-- another-dog.png
++-- cats
+|   +-- brown-cat.png
+|   +-- black-cat.png
+...
+</code></pre></div>
+
+<p>Then simply pass the directory path to the <code>train</code> function:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">traintool</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">train_data</span><span class="o">=</span><span class="s2">&quot;./train&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<h2 id="scikit-learn-models">Scikit-learn models<a class="headerlink" href="#scikit-learn-models" title="Permanent link">&para;</a></h2>
+<p>These models implement simple classification algorithms that should train in a 
+reasonable amount of time. Note that they are not GPU-accelerated so they might still
+take quite long with large datasets. </p>
+<p><strong>Preprocessing:</strong> Image files are first loaded to a size of 28 x 28. All images (numpy 
+or files) are then flattened and scaled to mean 0, standard deviation 1 (based on the 
+train set). </p>
+<p><strong>Config parameters:</strong></p>
+<ul>
+<li><code>num_samples</code>: Set the number of samples to train on. This can be used to train on a 
+subset of the data. Defaults to None (i.e. train on all data).</li>
+<li><code>num_samples_to_plot</code>: Set the number of samples to plot to tensorboard for each 
+dataset. Defaults to 5.</li>
+<li>All other config parameters are forwarded to the constructor of the sklearn object</li>
+</ul>
+<p><strong>Models:</strong></p>
+<ul>
+<li><code>random-forest</code>: A random forest classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html">sklearn.ensemble.RandomForestClassifier</a></li>
+<li><code>gradient-boosting</code>: Gradient boosting for classification, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html">sklearn.ensemble.GradientBoostingClassifier</a></li>
+<li><code>gaussian-process</code>: Gaussian process classification based on Laplace approximation, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html#sklearn.gaussian_process.GaussianProcessClassifier">sklearn.gaussian_process.GaussianProcessClassifier</a></li>
+<li><code>logistic-regression</code>: Logistic Regression (aka logit, MaxEnt) classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">sklearn.linear_model.LogisticRegression</a></li>
+<li><code>sgd</code>: Linear classifiers (SVM, logistic regression, etc.) with SGD training, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html">sklearn.linear_model.SGDClassifier</a></li>
+<li><code>perceptron</code>: A perceptron classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Perceptron.html">sklearn.linear_model.Perceptron</a></li>
+<li><code>passive-aggressive</code>: Passive aggressive classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html">sklearn.linear_model.PassiveAggressiveClassifier</a></li>
+<li><code>gaussian-nb</code>: Gaussian Naive Bayes, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html">sklearn.naive_bayes.GaussianNB</a></li>
+<li><code>k-neighbors</code>: Classifier implementing the k-nearest neighbors vote, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html">sklearn.neighbors.KNeighborsClassifier</a></li>
+<li><code>mlp</code>: Multi-layer Perceptron classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html">sklearn.neural_network.MLPClassifier</a></li>
+<li><code>svc</code>: C-Support Vector Classification, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html">sklearn.svm.SVC</a></li>
+<li><code>linear-svc</code>: Linear Support Vector Classification, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html">sklearn.svm.LinearSVC</a></li>
+<li><code>decision-tree</code>: A decision tree classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html">sklearn.tree.DecisionTreeClassifier</a></li>
+<li><code>extra-tree</code>: An extra-trees classifier, from <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html">sklearn.ensemble.ExtraTreesClassifier</a></li>
+</ul>
+<h2 id="pytorch-models">PyTorch models<a class="headerlink" href="#pytorch-models" title="Permanent link">&para;</a></h2>
+<p>These models implement deep neural networks that can give better results on complex 
+datasets. They are GPU-accelerated if run on a machine with a GPU. </p>
+<p><strong>Preprocessing:</strong> All images (numpy or files) are rescaled to 256 x 256, then 
+center-cropped to 224 x 224, MEAN STD</p>
+<p><strong>Config parameters:</strong></p>
+<ul>
+<li><code>num_classes</code>: The number of classes/different output labels (and therefore number of 
+output neurons of the network). Defaults to None, in which case it will be automatically 
+inferred from the data. </li>
+<li><code>num_samples</code>: Set the number of samples to train on. This can be used to train on a 
+subset of the data. Defaults to None (i.e. train on all data).</li>
+<li><code>num_samples_to_plot</code>: Set the number of samples to plot to tensorboard for each 
+dataset. Defaults to 5.</li>
+<li><code>pretrained</code>: Whether to use pretrained weights for the models (trained on ImageNet). 
+Note that this requires that there are 1000 classes (the ImageNet classes). Defaults to 
+False. </li>
+</ul>
+<p><strong>Models:</strong></p>
+<p>More information on the <a href="https://pytorch.org/docs/stable/torchvision/models.html">torchvision docs</a>. </p>
+<ul>
+<li><code>alexnet</code>: AlexNet model architecture from the <a href="https://arxiv.org/abs/1404.5997">“One weird trick…”</a> paper</li>
+<li><code>vgg11</code>, <code>vgg11_bn</code>, <code>vgg13</code>, <code>vgg13_bn</code>, <code>vgg16</code>, <code>vgg16_bn</code>, <code>vgg19</code>, or <code>vgg19_bn</code>: VGG model variants from <a href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a></li>
+<li><code>resnet18</code>, <code>resnet34</code>, <code>resnet50</code>, <code>resnet101</code>, or <code>resnet152</code>: ResNet model variants from <a href="https://arxiv.org/pdf/1512.03385.pdf">“Deep Residual Learning for Image Recognition”</a></li>
+<li><code>squeezenet1_0</code>, or <code>squeezenet1_1</code>: SqueezeNet model variants from the <a href="https://arxiv.org/abs/1602.07360">“SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and &lt;0.5MB model size”</a> paper.</li>
+<li><code>densenet121</code>, <code>densenet169</code>, <code>densenet161</code>, or <code>densenet201</code>: Densenet model variants from <a href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a></li>
+<li><code>inception_v3</code>: Inception v3 model architecture from <a href="http://arxiv.org/abs/1512.00567">“Rethinking the Inception Architecture for Computer Vision”</a></li>
+<li><code>googlenet</code>: GoogLeNet (Inception v1) model architecture from <a href="http://arxiv.org/abs/1409.4842">“Going Deeper with Convolutions”</a></li>
+<li><code>shufflenet_v2_x0_5</code>, <code>shufflenet_v2_x1_0</code>, <code>shufflenet_v2_x1_5</code>, or <code>shufflenet_v2_x2_0</code>: ShuffleNetV2 variants, as described in <a href="https://arxiv.org/abs/1807.11164">“ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design”</a></li>
+<li><code>mobilenet_v2</code>: MobileNetV2 architecture from <a href="https://arxiv.org/abs/1801.04381">“MobileNetV2: Inverted Residuals and Linear Bottlenecks”</a></li>
+<li><code>resnext50_32x4d</code> or <code>resnext101_32x8d</code>: ResNeXt model variants from <a href="https://arxiv.org/pdf/1611.05431.pdf">“Aggregated Residual Transformation for Deep Neural Networks”</a></li>
+<li><code>wide_resnet50_2</code> or <code>wide_resnet101_2</code>: Wide ResNet-50-2 model variants from <a href="https://arxiv.org/pdf/1605.07146.pdf">“Wide Residual Networks”</a></li>
+<li><code>mnasnet0_5</code>, <code>mnasnet0_75</code>, <code>mnasnet1_0</code>, or <code>mnasnet1_3</code>: MNASNet variants from <a href="https://arxiv.org/pdf/1807.11626.pdf">“MnasNet: Platform-Aware Neural Architecture Search for Mobile”</a></li>
+</ul>
+<!--
+### Random forest
+
+
+
+
+- `simple-cnn`: 
+- `resnet18`: 
+- `alexnet`: 
+- `vgg16`: 
+- `squeezenet`: 
+- `densenet`: 
+- `inception`: 
+- `googlenet`: 
+- `shufflenet`: 
+- `mobilenet`: 
+- `resnext50_32x4d`: 
+- `wide_resnet50_2`: 
+- `mnasnet`: 
+
+
+    `random-forest`: 
+    `gradient-boosting`: 
+    `gaussian-process`: 
+    `logistic-regression`: 
+    `sgd`: 
+    `perceptron`: 
+    `passive-aggressive`: 
+    `gaussian-nb`: 
+    `k-neighbors`: 
+    `mlp`: 
+    `svc`: 
+    `linear-svc`: 
+    `decision-tree`: 
+    `extra-tree`: 
+-->
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        <a href="../../tutorial/quickstart/" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Quickstart
+            </div>
+          </div>
+        </a>
+      
+      
+        <a href="../../tutorial/deployment/" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Deployment
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+        
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/jrieke" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://twitter.com/jrieke" target="_blank" rel="noopener" title="twitter.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://www.linkedin.com/in/johannesrieke/" target="_blank" rel="noopener" title="www.linkedin.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+      </a>
+    
+      
+      
+      <a href="mailto:johannes.rieke@gmail.com" target="_blank" rel="noopener" title="" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M502.3 190.8c3.9-3.1 9.7-.2 9.7 4.7V400c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V195.6c0-5 5.7-7.8 9.7-4.7 22.4 17.4 52.1 39.5 154.1 113.6 21.1 15.4 56.7 47.8 92.2 47.6 35.7.3 72-32.8 92.3-47.6 102-74.1 131.6-96.3 154-113.7zM256 320c23.2.4 56.6-29.2 73.4-41.4 132.7-96.3 142.8-104.7 173.4-128.7 5.8-4.5 9.2-11.5 9.2-18.9v-19c0-26.5-21.5-48-48-48H48C21.5 64 0 85.5 0 112v19c0 7.4 3.4 14.3 9.2 18.9 30.6 23.9 40.7 32.4 173.4 128.7 16.8 12.2 50.2 41.8 73.4 41.4z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["tabs", "instant"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../assets/javascripts/workers/search.fb4a9340.min.js", "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.5cf3e710.min.js"></script>
+      
+        <script src="../../stylesheets/extra.js"></script>
+      
+    
+  </body>
+</html>

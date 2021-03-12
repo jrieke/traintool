@@ -1,0 +1,11 @@
+mkdocs
+mkdocs-material
+pygments
+pymdown-extensions
+mkdocs-autolinks-plugin
+mknotebooks
+#mkdocs-table-reader-plugin
+#mkdocs-jupyter  # NOTE: this requires nbconvert==5.6.1
+#mkdocs-exclude
+#mkdocs-click
+#mkdocstrings
