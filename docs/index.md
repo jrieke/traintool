@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-    <b><a href="https://traintool.jrieke.com/">Try it out in Google Colab</a> • <a href="https://traintool.jrieke.com/">Documentation</a></b>
+    <b><a href="https://colab.research.google.com/github/jrieke/traintool/blob/master/docs/tutorial/quickstart.ipynb">Try it out in Google Colab</a> • <a href="https://traintool.jrieke.com/">Documentation</a></b>
 </p>
 
 ---
