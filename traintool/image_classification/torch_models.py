@@ -128,7 +128,7 @@ class TorchImageClassificationWrapper(ModelWrapper):
                 self.config, ["lr", "betas", "eps", "weight_decay", "amsgrad"]
             )
             logger.info(f"    optimizer args: {kwargs}")
-            return optim.Adadelta(model_params, **kwargs)
+            return optim.Adam(model_params, **kwargs)
         elif optimizer_name == "adadelta":
             kwargs = utils.filter_dict(
                 self.config, ["lr", "rho", "eps", "weight_decay"]
